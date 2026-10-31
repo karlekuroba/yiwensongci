@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E9F6E">
+<title>LearnWordsByTexts</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#F7F7F5; --card:#FFFFFF; --ink:#1C1917; --muted:#78716C; --line:#E7E5E4; --soft:#F2F1EF;
+  --brand:#0E9F6E; --brand-ink:#065F46; --brand-soft:#E6F6EF;
+  --danger:#DC2626; --warn:#B45309; --warn-soft:#FEF3C7;
+  --r:10px; --r-lg:14px;
+  --shadow:0 1px 2px rgba(28,25,23,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111110; --card:#1B1B19; --ink:#E7E5E4; --muted:#A8A29E; --line:#2C2C29; --soft:#232320;
+    --brand:#34D399; --brand-ink:#A7F3D0; --brand-soft:#0C2C21;
+    --danger:#F87171; --warn:#FBBF24; --warn-soft:#3A2A0A;
+    --shadow:none;
+  }
+}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-text-size-adjust:100%;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--brand-ink)}
+
+header{
+  position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line);
+}
+.hbar{max-width:780px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+.brand{font-weight:700;font-size:16px;letter-spacing:-.2px;white-space:nowrap}
+.brand span{color:var(--brand)}
+nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  border:0;background:none;padding:7px 12px;border-radius:999px;color:var(--muted);
+  font-size:14px;white-space:nowrap;transition:.15s
+}
+nav button.on{background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
+nav button:hover{color:var(--ink)}
+
+.wrap{max-width:780px;margin:0 auto;padding:18px 16px 90px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card.tight{padding:14px}
+h1{font-size:22px;line-height:1.35;margin:0 0 6px;letter-spacing:-.3px}
+h2{font-size:17px;margin:0 0 10px;letter-spacing:-.2px}
+h3{font-size:15px;margin:18px 0 8px}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:13px;line-height:1.6}
+.tiny{font-size:12px;line-height:1.55;color:var(--muted)}
+.hide{display:none!important}
+
+label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+input[type=text],input[type=password],input[type=number],select,textarea{
+  width:100%;background:var(--soft);border:1px solid var(--line);border-radius:var(--r);
+  padding:10px 12px;outline:none;transition:.15s
+}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);background:var(--card)}
+input[type=range]{accent-color:var(--brand)}
+::placeholder{color:var(--muted);opacity:1}
+textarea{resize:vertical;min-height:110px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:14px;line-height:1.7}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border:1px solid var(--line);background:var(--card);border-radius:var(--r);
+  padding:9px 14px;font-size:14px;font-weight:500;transition:.15s
+}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+@media (prefers-color-scheme: dark){.btn.primary{color:#06281C}}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ghost{background:none}
+.btn.danger{color:var(--danger);border-color:var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.block{width:100%}
+.btn.lg{padding:13px 18px;font-size:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.end{justify-content:flex-end}
+.spacer{flex:1}
+
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{
+  border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 13px;font-size:13px;color:var(--muted)
+}
+.pill.on{background:var(--ink);border-color:var(--ink);color:var(--bg);font-weight:600}
+.pill.mini{padding:4px 10px;font-size:12px}
+
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted)}
+
+.steps{display:flex;gap:6px;margin-bottom:14px}
+.steps button{
+  flex:1;border:1px solid var(--line);background:var(--card);border-radius:var(--r);
+  padding:8px 4px;font-size:13px;color:var(--muted);text-align:center
+}
+.steps button.on{border-color:var(--brand);color:var(--brand-ink);background:var(--brand-soft);font-weight:600}
+.steps button.done{color:var(--ink)}
+
+/* 会话页：吸顶播放器 / 进度条 / 遮罩 */
+.player{
+  position:sticky;top:var(--headerH,56px);z-index:20;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:14px;
+  box-shadow:0 4px 16px rgba(28,25,23,.07)
+}
+@media (prefers-color-scheme: dark){.player{box-shadow:0 4px 16px rgba(0,0,0,.4)}}
+.player .pr{display:flex;align-items:center;gap:10px}
+.player .pinfo{flex:1;min-width:0}
+.player .ptitle{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{position:relative;height:8px;background:var(--soft);border-radius:999px;margin-top:7px;overflow:hidden}
+.pfill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--brand);border-radius:999px;transition:width .2s linear}
+.ptick{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb,var(--card) 75%,transparent)}
+.seekbtn{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+  font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:.15s;flex:none
+}
+.seekbtn:disabled{opacity:.22;cursor:default}
+.sesssec{margin-top:20px;border-top:1px solid var(--line);padding-top:16px}
+.sechead{display:flex;align-items:baseline;gap:8px}
+.sechead h3{margin:0}
+.secno{font-size:12px;color:var(--muted)}
+.maskwrap{position:relative;border-radius:var(--r);margin-top:8px}
+.masked{filter:blur(7px);pointer-events:none;user-select:none;max-height:360px;overflow:hidden}
+.mask{
+  position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;text-align:center;padding:18px;border-radius:var(--r);
+  background:color-mix(in srgb,var(--card) 64%,transparent)
+}
+.skipbtn{border:0;background:none;color:var(--muted);font-size:12px;text-decoration:underline;padding:6px}
+
+.playwrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 0 18px}
+.playbtn{
+  width:88px;height:88px;border-radius:50%;border:0;background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:30px;
+  box-shadow:0 6px 22px color-mix(in srgb,var(--brand) 30%,transparent);transition:transform .12s
+}
+@media (prefers-color-scheme: dark){.playbtn{color:#06281C}}
+.playbtn:active{transform:scale(.95)}
+.playbtn.small{width:44px;height:44px;font-size:16px;box-shadow:none}
+.wave{display:flex;gap:3px;align-items:flex-end;height:26px}
+.wave i{width:3px;background:var(--brand);border-radius:2px;opacity:.35;height:10px;transition:.2s}
+.wave.on i{animation:wv .9s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}
+.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.15s}
+.wave i:nth-child(6){animation-delay:.05s}
+@keyframes wv{0%,100%{height:6px;opacity:.35}50%{height:24px;opacity:1}}
+
+.sent{
+  padding:9px 12px;border-radius:var(--r);border:1px solid transparent;margin:3px 0;
+  cursor:pointer;transition:.15s;line-height:1.75
+}
+.sent:hover{background:var(--soft)}
+.sent.cur{background:var(--brand-soft);border-color:color-mix(in srgb,var(--brand) 35%,transparent)}
+.sent .zh{display:block;font-size:13px;color:var(--muted);margin-top:3px}
+.art{font-size:17px;line-height:2}
+.art mark{background:color-mix(in srgb,var(--brand) 22%,transparent);color:inherit;border-radius:4px;padding:1px 2px}
+
+.hintline{display:flex;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.hintline:last-child{border-bottom:0}
+.hintnum{color:var(--muted);font-size:12px;min-width:18px;padding-top:2px}
+.hintbody{flex:1;font-size:15px;line-height:1.7}
+.blank{display:inline-block;min-width:52px;border-bottom:1.5px dotted var(--muted);margin:0 3px}
+.kw{
+  display:inline-block;font-size:13px;padding:2px 9px;margin:2px 3px 2px 0;border-radius:999px;
+  background:var(--soft);border:1px solid var(--line)
+}
+
+.wchips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.wchip{
+  border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:13.5px;
+  transition:.15s;user-select:none
+}
+.wchip.fuzzy{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 45%,transparent);color:var(--warn)}
+.wchip.miss{background:var(--soft);border-color:var(--muted);color:var(--muted);text-decoration:line-through}
+
+.wlist{margin-top:6px}
+.wrow{display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--line);align-items:baseline}
+.wrow:first-child{border-top:0}
+.wterm{font-weight:600;font-size:15px;min-width:96px}
+.wterm small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.wbody{flex:1;font-size:13.5px;line-height:1.65}
+.wbody .pos{color:var(--brand-ink);font-size:12px;margin-right:6px}
+
+.listitem{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:12px;align-items:flex-start}
+.listitem:first-child{border-top:0}
+.listitem .meta{flex:1;min-width:0}
+.listitem .ttl{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.listitem .sub{font-size:12.5px;color:var(--muted)}
+
+.banner{
+  background:var(--brand-soft);border:1px solid color-mix(in srgb,var(--brand) 30%,transparent);
+  border-radius:var(--r);padding:12px 14px;margin-bottom:12px;font-size:13.5px
+}
+.warnbox{background:var(--warn-soft);border-radius:var(--r);padding:10px 12px;font-size:13px;color:var(--warn);margin:10px 0}
+
+details{border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin:10px 0;background:var(--card)}
+details summary{cursor:pointer;font-weight:500;font-size:14px}
+details[open] summary{margin-bottom:8px}
+
+.overlay{
+  position:fixed;inset:0;background:rgba(20,18,16,.45);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:18px;
+  animation:fade .15s ease-out
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--card);border-radius:16px;max-width:440px;width:100%;max-height:86vh;overflow:auto;
+  padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.2)
+}
+.modal h3{margin:0 0 10px;font-size:18px}
+.modal .mbody{font-size:14px;line-height:1.7;color:var(--ink)}
+.modal .mactions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.dots{display:flex;gap:5px;justify-content:center;margin-top:14px}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--brand);width:16px;border-radius:3px}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:200;
+  background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13.5px;
+  animation:fade .18s;max-width:calc(100% - 32px);text-align:center
+}
+
+.spin{width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.voice-item{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.voice-item:first-child{border-top:0}
+
+.ph{color:var(--muted);font-style:italic}
+
+@media (max-width:480px){
+  .hbar{padding:9px 12px;gap:8px}
+  .brand{font-size:14.5px}
+  nav button{padding:6px 10px;font-size:13px}
+  .wrap{padding:14px 12px 90px}
+  .card{padding:15px}
+  .wterm{min-width:78px}
+  h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="brand">LearnWords<span>ByTexts</span></div>
+    <nav id="nav">
+      <button data-view="today" class="on">今日</button>
+      <button data-view="history">历史</button>
+      <button data-view="help">帮助</button>
+      <button data-view="settings">设置</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-today"></section>
+  <section id="view-history" class="hide"></section>
+  <section id="view-help" class="hide"></section>
+  <section id="view-settings" class="hide"></section>
+</main>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script>
+"use strict";
+
+/* ============================ 基础工具 ============================ */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const dayDiff = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+const LANGS = {
+  en: { name: 'English', native: 'English', tts: 'en-US', dir: 'ltr' },
+  de: { name: 'Deutsch', native: 'Deutsch', tts: 'de-DE', dir: 'ltr' },
+  ja: { name: '日本語', native: '日本語', tts: 'ja-JP', dir: 'ltr' }
+};
+const LEVELS = ['auto','A1','A2','B1','B2','C1','C2'];
+
+/* ============================ 设置 ============================ */
+const SETTINGS_KEY = 'lwbt.settings.v1';
+const DEFAULT_SETTINGS = {
+  apiKey: '', model: 'gemini-2.5-flash',
+  lang: 'en', level: 'auto', newCount: 10, poolOn: true,
+  ttsMode: 'cloud', rate: 0.95, voicePref: {},
+  onboarded: false, retellOnboarded: false, cloudWarned: false
+};
+let settings = Object.assign({}, DEFAULT_SETTINGS);
+function loadSettings(){
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) settings = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw));
+  } catch(e){}
+}
+function saveSettings(){
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e){}
+}
+
+/* ============================ 数据层 ============================ */
+const DB = {
+  db: null, ok: false,
+  async init(){
+    try {
+      this.db = await new Promise((res, rej) => {
+        const req = indexedDB.open('lwbt', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('sessions')) db.createObjectStore('sessions', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('audio')) db.createObjectStore('audio');
+        };
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+        req.onblocked = () => rej(new Error('blocked'));
+      });
+      this.ok = true;
+    } catch(e){
+      this.ok = false;
+    }
+  },
+  _lsAll(){
+    try { return JSON.parse(localStorage.getItem('lwbt.sessions.v1') || '[]'); } catch(e){ return []; }
+  },
+  _lsSave(arr){
+    try { localStorage.setItem('lwbt.sessions.v1', JSON.stringify(arr)); } catch(e){}
+  },
+  async all(){
+    if (!this.ok) return this._lsAll().sort((a,b)=> b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+    return await new Promise((res, rej) => {
+      const out = [];
+      const tx = this.db.transaction('sessions', 'readonly');
+      const rq = tx.objectStore('sessions').openCursor();
+      rq.onsuccess = () => {
+        const c = rq.result;
+        if (c){ out.push(c.value); c.continue(); } else {
+          out.sort((a,b)=> b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+          res(out);
+        }
+      };
+      rq.onerror = () => rej(rq.error);
+    });
+  },
+  async put(session){
+    session.createdAt = session.createdAt || Date.now();
+    if (!this.ok){
+      const arr = this._lsAll().filter(s => s.id !== session.id);
+      arr.push(session); this._lsSave(arr); return;
+    }
+    await new Promise((res, rej) => {
+      const tx = this.db.transaction('sessions', 'readwrite');
+      tx.objectStore('sessions').put(session);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  },
+  async remove(ids){
+    const list = [].concat(ids);
+    if (!this.ok){
+      this._lsSave(this._lsAll().filter(s => !list.includes(s.id)));
+      list.forEach(id => this.delAudio(id));
+      return;
+    }
+    await new Promise((res, rej) => {
+      const tx = this.db.transaction(['sessions','audio'], 'readwrite');
+      list.forEach(id => { tx.objectStore('sessions').delete(id); tx.objectStore('audio').delete(id); });
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  },
+  async putAudio(id, blob){
+    if (!this.ok) return false;
+    try {
+      await new Promise((res, rej) => {
+        const tx = this.db.transaction('audio', 'readwrite');
+        tx.objectStore('audio').put(blob, id);
+        tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+      });
+      return true;
+    } catch(e){ return false; }
+  },
+  async getAudio(id){
+    if (!this.ok) return null;
+    return await new Promise((res) => {
+      const tx = this.db.transaction('audio', 'readonly');
+      const rq = tx.objectStore('audio').get(id);
+      rq.onsuccess = () => res(rq.result || null);
+      rq.onerror = () => res(null);
+    });
+  },
+  async delAudio(id){
+    if (!this.ok) return;
+    try {
+      const tx = this.db.transaction('audio', 'readwrite');
+      tx.objectStore('audio').delete(id);
+    } catch(e){}
+  },
+  async clearAudio(){
+    if (!this.ok) return 0;
+    let n = 0;
+    await new Promise((res) => {
+      const tx = this.db.transaction('audio', 'readwrite');
+      const store = tx.objectStore('audio');
+      const rq = store.openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c){ n++; c.delete(); c.continue(); } else res(); };
+      rq.onerror = () => res();
+    });
+    return n;
+  },
+  async audioCount(){
+    if (!this.ok) return 0;
+    return await new Promise((res) => {
+      let n = 0;
+      const rq = this.db.transaction('audio','readonly').objectStore('audio').openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c){ n++; c.continue(); } else res(n); };
+      rq.onerror = () => res(0);
+    });
+  },
+  async reset(){
+    if (this.ok){
+      await new Promise((res) => {
+        const tx = this.db.transaction(['sessions','audio'], 'readwrite');
+        tx.objectStore('sessions').clear(); tx.objectStore('audio').clear();
+        tx.oncomplete = res; tx.onerror = res;
+      });
+    }
+    try { localStorage.removeItem('lwbt.sessions.v1'); } catch(e){}
+  }
+};
+
+/* ============================ 弹窗 / 提示 ============================ */
+function toast(msg, ms = 2200){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  $('#toast-root').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = '.3s'; setTimeout(() => el.remove(), 320); }, ms);
+}
+function modal({ title, body, actions = [], onClose = null, dismissable = true }){
+  const root = $('#modal-root');
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = '<div class="modal" role="dialog" aria-modal="true">'
+    + '<h3>' + esc(title) + '</h3>'
+    + '<div class="mbody">' + body + '</div>'
+    + '<div class="mactions"></div>'
+    + '</div>';
+  const acts = $('.mactions', ov);
+  const close = () => { ov.remove(); if (onClose) onClose(); };
+  actions.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'btn ' + (a.primary ? 'primary' : '') + (a.ghost ? ' ghost' : '');
+    b.textContent = a.label;
+    b.onclick = () => { if (a.onClick){ if (a.onClick(close) === false) return; } close(); };
+    acts.appendChild(b);
+  });
+  if (dismissable) ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  root.appendChild(ov);
+  return close;
+}
+
+/* ============================ 存储自检 ============================ */
+const STORAGE_MODE = {
+  get idb(){ return DB.ok; },
+  get label(){ return DB.ok ? 'IndexedDB（推荐）' : 'localStorage（降级）'; }
+};
+
+/* ============================ 词表解析 ============================ */
+function parseWords(raw){
+  const lines = String(raw || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const out = [];
+  for (let line of lines){
+    let s = line.replace(/^[\s\-*•·]*\d+\s*[.、)\]]?\s*/, '').replace(/^[\-*•·]\s*/, '').trim();
+    if (!s) continue;
+    let parts = s.split(/\s*[|｜]\s*|\t+|\s{2,}/).map(x => x.trim()).filter(Boolean);
+    if (parts.length === 1){
+      const m = s.match(/^([^\u3400-\u9fff]+?)\s+([\u3400-\u9fff][\s\S]*)$/);
+      if (m) parts = [m[1].trim(), m[2].trim()];
+    }
+    const term = (parts[0] || '').replace(/\s+/g, ' ').trim();
+    if (!term) continue;
+    out.push({ term, zhHint: parts[1] || '' });
+    if (out.length >= 10) break;
+  }
+  return out;
+}
+const ARTICLES = /^(der|die|das|den|dem|des|le|la|les|el|los|las|il|lo|gli|un|une|uno|una)\s+/i;
+function bare(term){ return String(term || '').replace(ARTICLES, '').trim().toLowerCase(); }
+
+/* ============================ 生词池 ============================ */
+async function loadPool(lang){
+  const sessions = await DB.all();
+  const map = new Map();
+  sessions.forEach(s => {
+    if (s.lang !== lang) return;
+    (s.words || []).forEach(w => {
+      if (w.mark !== 'miss' && w.mark !== 'fuzzy') return;
+      const key = bare(w.term);
+      const rec = map.get(key) || { term: w.term, zh: w.zh, pos: w.pos, extra: w.extra, score: 0, count: 0, last: s.date };
+      rec.score += (w.mark === 'miss' ? 2 : 1);
+      rec.count += 1;
+      if (s.date > rec.last) rec.last = s.date;
+      map.set(key, rec);
+    });
+  });
+  return Array.from(map.values()).sort((a, b) => b.score - a.score || b.last.localeCompare(a.last));
+}
+
+/* ============================ 复习队列 ============================ */
+const REVIEW_GAPS = [1, 3, 7];
+function dueSessions(sessions){
+  const today = todayStr();
+  const out = [];
+  sessions.forEach(s => {
+    const d = dayDiff(s.date, today);
+    if (REVIEW_GAPS.includes(d) && (s.done && s.done.read) && !(s.reviewed || []).includes(d)){
+      out.push({ session: s, gap: d });
+    }
+  });
+  return out;
+}
+
+/* ============================ Prompt ============================ */
+function buildPrompt(words, lang, level){
+  const L = LANGS[lang];
+  const n = Math.max(words.length, 1);
+  const lenText = lang === 'ja'
+    ? (n * 20) + '–' + (n * 30) + ' 个字符'
+    : (n * 7) + '–' + (n * 10) + ' 个单词';
+  const list = words.map(w => w.zhHint ? '- ' + w.term + '（' + w.zhHint + '）' : '- ' + w.term).join('\n');
+  const rules = {
+    en: '英语：自然、口语化的书面表达；句子简短；避免生僻词和抽象议论。',
+    de: '德语：名词首字母必须大写；冠词、格、动词变位必须正确；A1–A2 每句不超过 12 个词；可分动词要正确拆分。',
+    ja: '日语：A1–A2 使用「です・ます」体；使用常用汉字；句子自然，不要直译腔；每句不超过 40 个字符。'
+  }[lang];
+  return '你是一位专业的多语言教材作者。请用给定词汇写一篇连贯、自然、适合朗读和复述的短文。\n\n'
+    + '语言：' + L.name + '\n'
+    + '难度：' + (level === 'auto' ? '请你根据这批词汇的实际难度自行判断等级（A1–C2），并给出一句话理由' : level) + '\n'
+    + '长度：' + lenText + '\n'
+    + rules + '\n\n'
+    + '要求：\n'
+    + '1. 每个目标词至少出现一次，并自然融入语境，不要生硬堆砌。\n'
+    + '2. 句子之间要有清楚的逻辑衔接（时间、因果、转折），整体是一个有画面感的小场景，便于听后复述。\n'
+    + '3. 语法必须正确，母语者读起来自然。\n'
+    + '4. 为每个句子提供：starter（该句开头的 3–4 个词）、keywords（该句的目标词或关键词）、verb（该句主要动词原形）。\n'
+    + '5. words 中给出每个目标词：term（原型）、surface（它在文中实际出现的那个词形，没有变化就与原型相同）、pos（词性）、zh（中文）、extra（形态说明：英语给不规则复数/过去式；德语名词给冠词和复数、动词给三时、形容词给比较级最高级；日语给词性与活用）、sentence（所在句子的序号，从 0 开始）。\n\n'
+    + '目标词：\n' + list + '\n\n'
+    + '只输出一个 JSON 对象，不要 markdown 代码块，不要任何解释文字。格式：\n'
+    + '{"level":"A2","levelReason":"一句话理由","title":"短标题","sentences":[{"text":"原文","zh":"中文翻译","starter":"句首3-4词","keywords":["词"],"verb":"动词"}],"words":[{"term":"原型","surface":"文中词形","pos":"词性","zh":"中文","extra":"形态说明","sentence":0}]}';
+}
+
+/* ============================ Gemini API ============================ */
+const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+function apiKeyOk(){ return !!(settings.apiKey && settings.apiKey.trim().length > 10); }
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+function fetchWithTimeout(url, opts, ms){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms || 25000);
+  return fetch(url, Object.assign({}, opts, { signal: ctl.signal })).finally(() => clearTimeout(timer));
+}
+
+async function callGemini(parts, generationConfig, opts){
+  if (!apiKeyOk()) throw { kind: 'nokey' };
+  const url = API_BASE + encodeURIComponent(settings.model) + ':generateContent?key=' + encodeURIComponent(settings.apiKey.trim());
+  const body = JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: generationConfig || {} });
+  const maxTry = (opts && opts.retry === false) ? 1 : 2;
+  let lastErr = null;
+  for (let attempt = 1; attempt <= maxTry; attempt++){
+    let res;
+    try {
+      res = await fetchWithTimeout(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }, 25000);
+    } catch (e){
+      const aborted = e && e.name === 'AbortError';
+      lastErr = { kind: aborted ? 'timeout' : 'network', detail: aborted ? '25 秒内没有响应' : (e && e.message ? e.message : String(e)) };
+      if (attempt < maxTry && !aborted){ await sleep(1500); continue; }
+      throw lastErr;
+    }
+    if (!res.ok){
+      let detail = '';
+      try { detail = await res.text(); } catch (e){}
+      lastErr = { kind: 'http', status: res.status, detail: String(detail).slice(0, 600) };
+      if (res.status === 503 && attempt < maxTry){
+        toast('Google 侧模型繁忙，4 秒后自动重试');
+        await sleep(4000);
+        continue;
+      }
+      throw lastErr;
+    }
+    const data = await res.json();
+    const cand = data && data.candidates && data.candidates[0];
+    if (!cand) throw { kind: 'empty', detail: JSON.stringify(data).slice(0, 400) };
+    if (cand.finishReason === 'MAX_TOKENS') throw { kind: 'truncated' };
+    return cand;
+  }
+  throw lastErr;
+}
+
+function extractJson(text){
+  const s = String(text || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a < 0 || b <= a) throw { kind: 'badjson' };
+  try { return JSON.parse(s.slice(a, b + 1)); }
+  catch (e){ throw { kind: 'badjson', detail: e.message }; }
+}
+
+async function generateSession(newWords, level, lang){
+  const cand = await callGemini(
+    [{ text: buildPrompt(newWords, lang, level) }],
+    { temperature: 0.85, responseMimeType: 'application/json' }
+  );
+  const raw = (cand.content && cand.content.parts || []).map(p => p.text || '').join('');
+  const json = extractJson(raw);
+  return normalizeSession(json, newWords, lang, level);
+}
+
+function normalizeSession(json, newWords, lang, level){
+  const sentences = (json.sentences || []).map(s => ({
+    text: String(s.text || '').trim(),
+    zh: String(s.zh || '').trim(),
+    starter: String(s.starter || '').trim(),
+    keywords: Array.isArray(s.keywords) ? s.keywords.map(String) : [],
+    verb: String(s.verb || '').trim()
+  })).filter(s => s.text);
+  if (!sentences.length) throw { kind: 'badjson', detail: '模型没有返回句子' };
+
+  const words = (json.words || []).map(w => ({
+    term: String(w.term || '').trim(),
+    surface: String(w.surface || w.term || '').trim(),
+    pos: String(w.pos || '').trim(),
+    zh: String(w.zh || '').trim(),
+    extra: String(w.extra || '').trim(),
+    sentence: Math.max(0, Math.min(sentences.length - 1, Number(w.sentence) || 0)),
+    mark: null, isNew: true
+  })).filter(w => w.term);
+
+  newWords.forEach(nw => {
+    const hit = words.find(w => bare(w.term) === bare(nw.term) || bare(w.surface) === bare(nw.term));
+    if (hit){
+      hit.isNew = true;
+      if (!hit.zh && nw.zhHint) hit.zh = nw.zhHint;
+    } else {
+      words.push({ term: nw.term, surface: nw.term, pos: '', zh: nw.zhHint || '', extra: '', sentence: 0, mark: null, isNew: true });
+    }
+  });
+
+  return {
+    id: uid(),
+    date: todayStr(),
+    lang,
+    level: String(json.level || (level === 'auto' ? '' : level) || ''),
+    levelReason: String(json.levelReason || ''),
+    title: String(json.title || 'Untitled').trim(),
+    sentences, words,
+    demo: false,
+    done: { listen: false, retell: false, read: false },
+    reviewed: [],
+    createdAt: Date.now()
+  };
+}
+
+function showApiError(e, retry){
+  const raw = e && e.detail ? '<p class="tiny">原始信息：' + esc(e.detail) + '</p>' : '';
+  const retryBtn = retry ? { label: '重试', primary: true, onClick: retry } : { label: '关闭' };
+  const goSet = { label: '去设置', onClick: () => showView('settings') };
+  let m;
+  if (e.kind === 'nokey'){
+    m = {
+      t: '还没有填 Google 密钥',
+      b: '<p>生成短文需要一次 AI 调用。密钥是免费的，2 分钟能拿到。</p><p class="small muted">设置 → 粘贴密钥 → 保存。密钥只存在这台设备。</p>',
+      a: [{ label: '去设置', primary: true, onClick: () => showView('settings') }]
+    };
+  } else if (e.kind === 'timeout'){
+    m = {
+      t: '请求超时',
+      b: '<p>25 秒内没等到 Google 的回应。通常是模型排队或网络很慢。</p><p class="small">① 直接重试；② 换回 <code>gemini-2.5-flash</code>；③ 如果开了 VPN，确认浏览器也在走代理。</p>' + raw,
+      a: [retryBtn, goSet]
+    };
+  } else if (e.kind === 'network'){
+    m = {
+      t: '连不上 Google',
+      b: '<p>浏览器没能访问 Gemini 接口。常见原因：代理/VPN 只开了系统层，浏览器没走代理；或者网络被拦截。</p>' + raw,
+      a: [retryBtn, { label: '关闭' }]
+    };
+  } else if (e.kind === 'http' && e.status === 503){
+    m = {
+      t: 'Google 侧暂时不可用（503）',
+      b: '<p><b>这不是你的密钥问题。</b>模型此刻过载或服务临时中断，工具已经自动重试过一次。</p>'
+        + '<p class="small">建议：① 等 5–30 分钟再试；② 把模型换回 <code>gemini-2.5-flash</code>；③ 打开 AI Studio 网页用同一个模型试一下，确认是不是账号或地区问题。</p>' + raw,
+      a: [retryBtn, goSet]
+    };
+  } else if (e.kind === 'http' && e.status === 429){
+    m = {
+      t: '今天的免费额度用完了',
+      b: '<p>免费额度按美国太平洋时间零点重置，相当于北京时间下午 3–4 点。今天可以先用手动模式，或明天再试。</p>' + raw,
+      a: [retryBtn, goSet]
+    };
+  } else if (e.kind === 'http' && e.status === 403){
+    m = {
+      t: '密钥不可用（403）',
+      b: '<p>密钥可能被删除、被限制，或限制了来源网站。</p><p class="small">到 AI Studio 检查这个密钥：如果设了「HTTP 来源限制」，请改成不限制，或允许本地文件访问。也可以直接新建一个密钥。</p>' + raw,
+      a: [retryBtn, goSet]
+    };
+  } else if (e.kind === 'http' && e.status === 404){
+    m = {
+      t: '模型名不对（404）',
+      b: '<p>这个模型 ID 不存在或你的账号不能用。</p><p class="small">在 AI Studio 里打开任意模型，点右上角 Get code，看 <code>model:</code> 后面那串，原样填进设置。默认值 <code>gemini-2.5-flash</code> 是可用的。</p>' + raw,
+      a: [{ label: '去设置', primary: true, onClick: () => showView('settings') }]
+    };
+  } else if (e.kind === 'http'){
+    m = {
+      t: '请求被拒绝（' + e.status + '）',
+      b: '<p>服务器返回了 ' + e.status + '，不一定是密钥问题。</p>' + raw,
+      a: [retryBtn, goSet]
+    };
+  } else if (e.kind === 'truncated'){
+    m = {
+      t: '这次生成被截断了',
+      b: '<p>模型输出太长没写完。把词减到 5–8 个再试一次。</p>',
+      a: [retryBtn]
+    };
+  } else if (e.kind === 'badjson'){
+    m = {
+      t: '模型返回的格式不对',
+      b: '<p>偶尔会发生。直接重试通常就好了。</p>' + raw,
+      a: [retryBtn]
+    };
+  } else {
+    m = { t: '生成失败', b: '<p>' + esc(e.detail || e.message || '未知错误') + '</p>', a: [retryBtn] };
+  }
+  modal({ title: m.t, body: m.b, actions: m.a });
+}
+
+/* ============================ 系统语音 ============================ */
+let voices = [];
+function refreshVoices(){
+  if (!('speechSynthesis' in window)) return;
+  voices = window.speechSynthesis.getVoices() || [];
+}
+if ('speechSynthesis' in window){
+  refreshVoices();
+  window.speechSynthesis.onvoiceschanged = refreshVoices;
+}
+function voicesFor(langKey){
+  const pre = LANGS[langKey].tts.split('-')[0];
+  return voices.filter(v => (v.lang || '').toLowerCase().replace('_','-').startsWith(pre));
+}
+const GOOD_VOICE = /natural|neural|online|premium|enhanced|wavenet|studio/i;
+function voiceScore(v, langKey){
+  let sc = 0;
+  if (GOOD_VOICE.test(v.name || '')) sc += 100;
+  if (v.localService === false) sc += 30;
+  if (/google/i.test(v.name || '')) sc += 20;
+  if ((v.lang || '').toLowerCase().replace('_', '-') === LANGS[langKey].tts.toLowerCase()) sc += 10;
+  return sc;
+}
+function pickVoice(langKey){
+  const list = voicesFor(langKey);
+  if (!list.length) return null;
+  const pref = settings.voicePref && settings.voicePref[langKey];
+  if (pref){
+    const hit = list.find(v => (v.voiceURI || v.name) === pref) || list.find(v => v.name === pref);
+    if (hit) return hit;
+  }
+  return list.slice().sort((a, b) => voiceScore(b, langKey) - voiceScore(a, langKey))[0];
+}
+
+let speechToken = 0;
+function stopSpeech(){
+  speechToken++;
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+function speakSentences(sentences, langKey, rate, onIdx, onEnd){
+  if (!('speechSynthesis' in window)){ toast('这台设备的浏览器不支持系统语音'); return; }
+  stopSpeech();
+  const my = speechToken;
+  const lang = LANGS[langKey].tts;
+  const list = sentences.map(s => typeof s === 'string' ? s : s.text);
+  let i = 0;
+  const step = () => {
+    if (my !== speechToken) return;
+    if (i >= list.length){ onEnd && onEnd(); return; }
+    const u = new SpeechSynthesisUtterance(list[i]);
+    u.lang = lang;
+    u.rate = rate;
+    const v = pickVoice(langKey);
+    if (v) u.voice = v;
+    u.onstart = () => { if (my === speechToken && onIdx) onIdx(i); };
+    u.onend = () => { if (my !== speechToken) return; i++; setTimeout(step, 120); };
+    u.onerror = () => { if (my === speechToken){ onEnd && onEnd(); } };
+    window.speechSynthesis.speak(u);
+  };
+  step();
+}
+
+/* ============================ 云端音频（Gemini TTS） ============================ */
+function b64ToBytes(b64){
+  const bin = atob(b64);
+  const len = bin.length;
+  const out = new Uint8Array(len);
+  for (let i = 0; i < len; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function wavFromPcm(pcm, sampleRate, channels, bits){
+  const blockAlign = channels * bits / 8;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = pcm.length;
+  const buf = new ArrayBuffer(44 + dataSize);
+  const dv = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); dv.setUint32(4, 36 + dataSize, true); w(8, 'WAVE');
+  w(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+  dv.setUint16(22, channels, true); dv.setUint32(24, sampleRate, true);
+  dv.setUint32(28, byteRate, true); dv.setUint16(32, blockAlign, true); dv.setUint16(34, bits, true);
+  w(36, 'data'); dv.setUint32(40, dataSize, true);
+  new Uint8Array(buf, 44).set(pcm);
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+async function synthCloud(text, langKey){
+  const model = 'gemini-2.5-flash-preview-tts';
+  if (!apiKeyOk()) throw { kind: 'nokey' };
+  const promptText = 'Read the following ' + LANGS[langKey].name + ' text aloud, clearly and naturally, with a warm tone.\n\n' + text;
+  let res;
+  try {
+    res = await fetchWithTimeout(API_BASE + model + ':generateContent?key=' + encodeURIComponent(settings.apiKey.trim()), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
+        }
+      })
+    }, 45000);
+  } catch (e){ throw { kind: e && e.name === 'AbortError' ? 'timeout' : 'network', detail: e.message }; }
+  if (!res.ok){
+    let d = ''; try { d = await res.text(); } catch (e){}
+    throw { kind: 'http', status: res.status, detail: String(d).slice(0, 400) };
+  }
+  const data = await res.json();
+  const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+  const inline = parts.map(p => p.inlineData).find(Boolean);
+  if (!inline || !inline.data) throw { kind: 'badjson', detail: '没有返回音频数据' };
+  const mime = inline.mimeType || 'audio/L16;rate=24000';
+  const rateMatch = mime.match(/rate=(\d+)/);
+  const rate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+  return wavFromPcm(b64ToBytes(inline.data), rate, 1, 16);
+}
+
+/* ============================ 演示数据（无需密钥） ============================ */
+const DEMO = {
+  en: {
+    title: 'A Small Favor',
+    level: 'A2',
+    verbs: ['stood', 'was', 'decided', 'hesitated', 'said', 'offered', 'had negotiated', 'felt'],
+    sentences: [
+      ['On an ordinary Tuesday, Mira stood on her balcony and watched the street below.', '一个普通的星期二，米拉站在阳台上看着下面的街道。'],
+      ['She was curious about the new neighbour, who never seemed to leave his flat.', '她对那位似乎从不出门的新邻居很好奇。'],
+      ['That morning she decided to borrow a ladder from him.', '那天上午，她决定向他借一把梯子。'],
+      ['He hesitated at the door, then whispered that he was busy.', '他在门口犹豫了一下，然后低声说自己很忙。'],
+      ['"I have a deadline tonight," he said, "but you can take it."', '“我今晚有个截止日期，”他说，“但你可以拿走。”'],
+      ['Mira was resilient enough not to give up, so she offered to carry boxes instead.', '米拉很有韧性，没有放弃，于是她提出帮他搬箱子。'],
+      ['By noon they had negotiated a fair deal: the ladder for two hours of moving.', '到中午，他们谈成了一笔公平的交易：梯子换两小时的搬家帮忙。'],
+      ['She felt a quiet gratitude for that small, ordinary morning.', '她对那个小小的、普通的早晨心怀安静的感激。']
+    ],
+    words: [
+      ['ordinary', 'ordinary', 'adj.', '普通的；平常的', 'more ordinary, most ordinary', 0],
+      ['balcony', 'balcony', 'n.', '阳台', '复数 balconies', 0],
+      ['curious', 'curious', 'adj.', '好奇的', 'curious about sth.', 1],
+      ['neighbour', 'neighbour', 'n.', '邻居', '美式 neighbor', 1],
+      ['borrow', 'borrow', 'v.', '借入；借用', 'borrow sth. from sb.', 2],
+      ['hesitate', 'hesitated', 'v.', '犹豫', 'hesitate to do sth.', 3],
+      ['whisper', 'whispered', 'v.', '低声说', 'whisper to sb.', 3],
+      ['deadline', 'deadline', 'n.', '截止日期', 'meet a deadline', 4],
+      ['resilient', 'resilient', 'adj.', '有韧性的；能恢复的', 'resilience n.', 5],
+      ['negotiate', 'negotiated', 'v.', '谈判；协商', 'negotiate a deal', 6],
+      ['gratitude', 'gratitude', 'n.', '感激', 'express gratitude', 7]
+    ]
+  },
+  de: {
+    title: 'Der alte Tisch',
+    level: 'A2',
+    verbs: ['steht', 'hat geschenkt', 'hat verloren', 'sind gelaufen', 'haben getrunken'],
+    sentences: [
+      ['In meiner Küche steht ein alter Tisch, der beim Anfassen leise klingt.', '我的厨房里放着一张旧桌子，摸它的时候会发出轻微的声音。'],
+      ['Mein Nachbar hat mir gestern ein neues Fenster geschenkt.', '我的邻居昨天送了我一扇新窗户。'],
+      ['Dabei hat er seinen Schlüssel verloren.', '结果他把自己的钥匙弄丢了。'],
+      ['Am nächsten Morgen sind wir früh zum Bäcker gelaufen.', '第二天早上我们很早步行去了面包店。'],
+      ['Dort haben wir eine Tasse Kaffee getrunken und uns über den Zufall gefreut.', '在那里我们喝了一杯咖啡，并为这个巧合感到高兴。']
+    ],
+    words: [
+      ['Tisch', 'Tisch', 'n. m.', '桌子', 'der Tisch, die Tische', 0],
+      ['Küche', 'Küche', 'n. f.', '厨房', 'die Küche, die Küchen', 0],
+      ['klingen', 'klingt', 'v.', '发出声音；听起来', 'klingt, klang, hat geklungen', 0],
+      ['Nachbar', 'Nachbar', 'n. m.', '邻居', 'der Nachbar, die Nachbarn', 1],
+      ['Fenster', 'Fenster', 'n. n.', '窗户', 'das Fenster, die Fenster', 1],
+      ['Schlüssel', 'Schlüssel', 'n. m.', '钥匙', 'der Schlüssel, die Schlüssel', 2],
+      ['verlieren', 'verloren', 'v.', '丢失', 'verliert, verlor, hat verloren', 2],
+      ['früh', 'früh', 'adj./adv.', '早的；早', 'früher, am frühesten', 3],
+      ['laufen', 'gelaufen', 'v.', '跑；步行', 'läuft, lief, ist gelaufen', 3],
+      ['Tasse', 'Tasse', 'n. f.', '杯子', 'die Tasse, die Tassen', 4],
+      ['sich freuen', 'gefreut', 'v.', '感到高兴', 'freut sich, freute sich, hat sich gefreut', 4]
+    ]
+  },
+  ja: {
+    title: '静かな午後',
+    level: 'A2',
+    verbs: ['散歩しました', 'あります', '注文しました', '待ちました', '笑いました', '帰りました'],
+    sentences: [
+      ['今日は天気がいいので、公園を散歩しました。', '今天天气很好，所以我去公园散步了。'],
+      ['公園の近くに静かな喫茶店があります。', '公园附近有一家安静的咖啡店。'],
+      ['私はそこでコーヒーを注文しました。', '我在那里点了咖啡。'],
+      ['友達は少し遅れて来るので、窓の近くで待ちました。', '朋友会晚一点来，所以我在窗边等着。'],
+      ['友達が来て、二人で笑いました。', '朋友来了，我们两个人都笑了。'],
+      ['それから、家に帰りました。', '然后，我们回家了。']
+    ],
+    words: [
+      ['天気', '天気', '名', '天气', 'いい天気 / 天気がいい', 0],
+      ['散歩', '散歩しました', '名・する', '散步', '散歩する → 散歩しました', 0],
+      ['静か', '静かな', 'ナ形', '安静', '静かな（連体形）', 1],
+      ['喫茶店', '喫茶店', '名', '咖啡店', 'きっさてん', 1],
+      ['注文', '注文しました', '名・する', '点单', '注文する → 注文しました', 2],
+      ['友達', '友達', '名', '朋友', 'ともだち', 3],
+      ['待つ', '待ちました', '动', '等待', '待つ → 待ちました', 3],
+      ['窓', '窓', '名', '窗户', 'まど', 3],
+      ['笑う', '笑いました', '动', '笑', '笑う → 笑いました', 4],
+      ['帰る', '帰りました', '动', '回去', '帰る → 帰りました', 5]
+    ]
+  }
+};
+function demoSession(lang){
+  const d = DEMO[lang];
+  return {
+    id: uid(), date: todayStr(), lang, level: d.level, levelReason: '演示数据',
+    title: d.title,
+    sentences: d.sentences.map((s, i) => ({
+      text: s[0],
+      zh: s[1],
+      starter: lang === 'ja'
+        ? (s[0].split(/[、。]/)[0] || s[0]).slice(0, 12)
+        : s[0].split(/\s+/).slice(0, 4).join(' '),
+      keywords: [],
+      verb: (d.verbs && d.verbs[i]) || ''
+    })),
+    words: d.words.map(w => ({ term: w[0], surface: w[1], pos: w[2], zh: w[3], extra: w[4], sentence: w[5], mark: null, isNew: true })),
+    demo: true,
+    done: { listen: false, retell: false, read: false },
+    reviewed: [],
+    createdAt: Date.now()
+  };
+}
+
+/* ============================ 今日页状态 ============================ */
+const state = {
+  session: null, step: 1, retellLevel: 0,
+  pool: [], pickedOld: [],
+  draft: { words: '', lang: settings.lang, level: settings.level },
+  playing: false, audioEl: null, audioUrl: null, playingMode: null,
+  history: [], due: []
+};
+
+/* ============================ 今日页渲染 ============================ */
+function renderToday(){
+  const root = $('#view-today');
+  if (!state.session){
+    root.innerHTML = setupHtml();
+    bindSetup();
+    return;
+  }
+  root.innerHTML = sessionHtml();
+  bindSession();
+}
+
+function setupHtml(){
+  const lang = state.draft.lang;
+  const pool = state.pool;
+  const oldChips = state.pickedOld.length
+    ? state.pickedOld.map(w => '<span class="kw">' + esc(w.term) + (w.zh ? ' · ' + esc(w.zh) : '') + '</span>').join('')
+    : '<span class="tiny">生词池还是空的，今天先学 10 个新词。</span>';
+  return ''
+  + '<div class="card">'
+  +   '<h1>今天要背的 10 个词</h1>'
+  +   '<p class="small muted">只输入外文原型即可，中文可以留空。</p>'
+  +   '<label class="f">语言</label>'
+  +   '<div class="pills" id="langPills">'
+  +     Object.keys(LANGS).map(k => '<button class="pill' + (k === lang ? ' on' : '') + '" data-lang="' + k + '">' + LANGS[k].native + '</button>').join('')
+  +   '</div>'
+  +   '<label class="f">难度</label>'
+  +   '<select id="levelSel">' + LEVELS.map(l => '<option value="' + l + '"' + (state.draft.level === l ? ' selected' : '') + '>' + (l === 'auto' ? '自动判断' : l) + '</option>').join('') + '</select>'
+  +   '<label class="f">单词（每行一个，最多 10 个）</label>'
+  +   '<textarea id="wordInput" spellcheck="false" placeholder="resilient&#10;negotiate&#10;der Tisch | 桌子&#10;食べる"></textarea>'
+  +   '<div class="row" style="margin-top:8px">'
+  +     '<span class="tiny" id="wordCount">0 / 10</span>'
+  +     '<span class="spacer"></span>'
+  +     '<label class="tiny" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="poolOn"' + (settings.poolOn ? ' checked' : '') + '> 从生词池带 2 个旧词</label>'
+  +   '</div>'
+  +   '<div id="poolBox" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">'
+  +     '<div class="tiny" style="margin-bottom:6px">复习带词</div>' + oldChips
+  +   '</div>'
+  +   '<div class="row" style="margin-top:16px">'
+  +     '<button class="btn primary lg" id="genBtn">生成短文</button>'
+  +     '<button class="btn lg" id="demoBtn">先用演示数据看流程</button>'
+  +   '</div>'
+  + '</div>'
+  + '<div class="card tight">'
+  +   '<div class="tiny">' + (apiKeyOk() ? '已配置密钥 · 模型 ' + esc(settings.model) : '还没配置密钥。点「生成短文」会提示你去拿一个免费的（2 分钟）。') + '</div>'
+  + '</div>';
+}
+
+function bindSetup(){
+  const ta = $('#wordInput');
+  ta.value = state.draft.words;
+  const count = () => {
+    const n = parseWords(ta.value).length;
+    const lines = String(ta.value).split(/\r?\n/).map(s => s.trim()).filter(Boolean).length;
+    $('#wordCount').textContent = n + ' / 10' + (lines > 10 ? '（只取前 10 个）' : '');
+  };
+  count();
+  ta.addEventListener('input', () => { state.draft.words = ta.value; count(); });
+
+  $$('#langPills button').forEach(b => b.addEventListener('click', async () => {
+    state.draft.lang = b.dataset.lang;
+    settings.lang = b.dataset.lang; saveSettings();
+    state.pickedOld = [];
+    state.pool = await loadPool(b.dataset.lang);
+    state.pickedOld = pickOld(state.pool, parseWords(state.draft.words).map(w => bare(w.term)));
+    renderToday();
+  }));
+  $('#levelSel').addEventListener('change', e => { state.draft.level = e.target.value; settings.level = e.target.value; saveSettings(); });
+  $('#poolOn').addEventListener('change', async e => {
+    settings.poolOn = e.target.checked; saveSettings();
+    state.pickedOld = e.target.checked ? pickOld(state.pool, parseWords(state.draft.words).map(w => bare(w.term))) : [];
+    renderToday();
+  });
+  $('#genBtn').addEventListener('click', onGenerate);
+  $('#demoBtn').addEventListener('click', () => {
+    enterSession(demoSession(state.draft.lang), false);
+    renderToday();
+  });
+}
+
+function pickOld(pool, excludeBare){
+  if (!settings.poolOn) return [];
+  return pool.filter(w => !excludeBare.includes(bare(w.term))).slice(0, 2);
+}
+
+let generating = false;
+async function onGenerate(){
+  if (generating) return;
+  const words = parseWords($('#wordInput').value);
+  if (!words.length){ toast('先输入至少 1 个单词'); return; }
+  if (!apiKeyOk()){
+    modal({
+      title: '还没有填 Google 密钥',
+      body: '<p>生成短文要调用一次免费的 AI 接口。你可以：</p>'
+        + '<p class="small"><b>1.</b> 打开 aistudio.google.com，登录 Google 账号<br><b>2.</b> 点 Get API key，创建一个密钥并复制<br><b>3.</b> 回到这里，设置 → 粘贴 → 保存</p>'
+        + '<p class="tiny">密钥只存在这台设备的浏览器里，不会上传到任何服务器。如果一个都不想填，可以先点「先用演示数据看流程」。</p>',
+      actions: [{ label: '去设置', primary: true, onClick: () => showView('settings') }, { label: '先用演示' }]
+    });
+    return;
+  }
+  generating = true;
+  const btn = $('#genBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 正在写…';
+  const oldList = state.pickedOld.map(w => ({ term: w.term, zhHint: w.zh || '' }));
+  const all = words.concat(oldList);
+  try {
+    const session = await generateSession(all, state.draft.level, state.draft.lang);
+    session.words.forEach(w => { w.isNew = !oldList.some(o => bare(o.term) === bare(w.term) && (w.surface === w.term || w.surface)); });
+    const fromNew = words.map(w => bare(w.term));
+    session.words.forEach(w => { w.isNew = fromNew.includes(bare(w.term)); });
+    if (state.pickedOld.length){
+      state.pickedOld.forEach(o => { session.reviewTerms = session.reviewTerms || []; session.reviewTerms.push(o.term); });
+    }
+    enterSession(session, false);
+    await DB.put(session);
+    state.history = await DB.all();
+    renderToday();
+    toast('短文已生成');
+  } catch (e){
+    showApiError(e, onGenerate);
+  } finally {
+    generating = false;
+    if ($('#genBtn')){ const b = $('#genBtn'); b.disabled = false; b.textContent = '生成短文'; }
+  }
+}
+
+/* ---------- 会话视图 ---------- */
+function sessionHtml(){
+  const s = state.session;
+  return ''
+  + '<div class="card" id="sessCard">'
+  +   '<div class="row" style="justify-content:space-between;align-items:flex-start">'
+  +     '<div><div class="tiny">' + s.date + ' · ' + LANGS[s.lang].native + (s.demo ? ' · 演示' : '') + (s.level ? ' · ' + esc(s.level) : '') + '</div>'
+  +     '<h2 style="margin:4px 0 0">' + esc(s.title) + '</h2></div>'
+  +     '<button class="btn ghost small" id="exitBtn">放弃</button>'
+  +   '</div>'
+  +   '<div id="listenBig"></div>'
+  +   '<div id="playerBar" class="player hide"></div>'
+  +   '<div id="belowZone" class="hide">'
+  +     '<section class="sesssec">'
+  +       '<div class="sechead"><span class="secno">②</span><h3>复述</h3></div>'
+  +       '<div class="maskwrap" id="retellWrap">'
+  +         '<div id="retellBody" class="masked"></div>'
+  +         '<div class="mask" id="retellMask"><button class="btn primary" data-reveal="retell">显示复述提示</button><span class="tiny">先自己讲一遍，卡住再看</span></div>'
+  +       '</div>'
+  +     '</section>'
+  +     '<section class="sesssec">'
+  +       '<div class="sechead"><span class="secno">③</span><h3>阅读</h3></div>'
+  +       '<div class="maskwrap" id="readWrap">'
+  +         '<div id="readBody" class="masked"></div>'
+  +         '<div class="mask" id="readMask"><button class="btn primary" data-reveal="read">显示短文与词表</button><span class="tiny">听完、复述完再看原文</span></div>'
+  +       '</div>'
+  +       '<div class="row" style="margin-top:18px"><button class="btn primary lg" id="finish" style="flex:1">完成今天 ✓</button></div>'
+  +     '</section>'
+  +   '</div>'
+  + '</div>';
+}
+
+function enterSession(s, unlocked){
+  state.session = s;
+  state.unlocked = !!unlocked;
+  state.revealed = { retell: false, read: false };
+  state.playing = false;
+  state.playMode = null;
+  state.playingMode = null;
+  state.idx = -1;
+  state.progress = 0;
+  state.seekable = !(settings.ttsMode === 'cloud' && apiKeyOk());
+}
+state.unlocked = false;
+state.seekable = true;
+state.revealed = { retell: false, read: false };
+state.idx = -1;
+state.progress = 0;
+
+function bindSession(){
+  const exit = $('#exitBtn');
+  if (exit) exit.addEventListener('click', () => {
+    modal({
+      title: '放弃这一篇？', body: '<p>还没完成的话，这篇不会进入复习队列（但已经存档，可以在历史里找到）。</p>',
+      actions: [{ label: '继续学习', primary: true }, { label: '放弃', onClick: () => { stopAll(); state.session = null; renderToday(); } }]
+    });
+  });
+  const fin = $('#finish');
+  if (fin) fin.addEventListener('click', finishSession);
+  renderSession();
+}
+
+function renderSession(){
+  const s = state.session;
+  if (!s) return;
+  renderRetellBody();
+  renderReadBody();
+  applyMask('retell');
+  applyMask('read');
+  const big = $('#listenBig'), bar = $('#playerBar'), below = $('#belowZone');
+  if (!big) return;
+  if (!state.playing) state.seekable = !(settings.ttsMode === 'cloud' && apiKeyOk());
+  if (!state.unlocked){
+    big.classList.remove('hide');
+    bar.classList.add('hide');
+    below.classList.add('hide');
+    big.innerHTML = bigPlayerHtml();
+    bindBigPlayer();
+  } else {
+    big.classList.add('hide');
+    bar.classList.remove('hide');
+    below.classList.remove('hide');
+    bar.innerHTML = barHtml();
+    bindBar();
+    updatePlayer();
+  }
+  bindReveal();
+}
+
+function rateRowHtml(id, width){
+  return '<div class="row" style="justify-content:center">'
+    + '<span class="tiny">语速</span>'
+    + '<input type="range" class="rateCtl" id="' + id + '" min="0.5" max="1.5" step="0.05" value="' + settings.rate + '" style="width:' + (width || 130) + 'px">'
+    + '<span class="tiny rateVal">' + Number(settings.rate).toFixed(2) + '×</span>'
+    + '</div>';
+}
+
+function bigPlayerHtml(){
+  const s = state.session;
+  return ''
+  + '<div class="playwrap">'
+  +   '<div class="wave" id="wave"><i></i><i></i><i></i><i></i><i></i><i></i></div>'
+  +   '<button class="playbtn" id="playBig">▶</button>'
+  +   '<div class="tiny" id="audioStatus">' + (settings.ttsMode === 'cloud' && apiKeyOk() ? '云端语音 · 首次播放需要合成几秒' : '设备语音') + '</div>'
+  +   rateRowHtml('rateBig', 130)
+  + '</div>'
+  + '<p class="tiny" style="text-align:center">文字已隐藏。第一遍不用全懂，抓住语气和大致场景就行。</p>'
+  + '<p style="text-align:center;margin:0"><button class="skipbtn" id="skipFirst">无法播放？跳过第一遍</button></p>';
+}
+
+function barHtml(){
+  const s = state.session;
+  const n = s.sentences.length;
+  const ticks = Array.from({ length: n - 1 }, (_, i) => '<div class="ptick" style="left:' + ((i + 1) / n * 100) + '%"></div>').join('');
+  return ''
+  + '<div class="pr">'
+  +   '<button class="playbtn small" id="playBar" title="播放 / 暂停">▶</button>'
+  +   '<div class="pinfo">'
+  +     '<div class="ptitle" id="barStatus">设备语音 · 共 ' + n + ' 句</div>'
+  +     '<div class="pbar" id="pbar" title="点进度条可跳到对应句"><div class="pfill" id="pfill"></div>' + ticks + '</div>'
+  +   '</div>'
+  +   '<button class="seekbtn" id="prevSent" title="上一句">⏪</button>'
+  +   '<button class="seekbtn" id="nextSent" title="下一句">⏩</button>'
+  + '</div>'
+  + '<div class="row" style="margin-top:8px;justify-content:flex-end">'
+  +   '<span class="tiny">语速</span>'
+  +   '<input type="range" class="rateCtl" id="rateBar" min="0.5" max="1.5" step="0.05" value="' + settings.rate + '" style="width:110px">'
+  +   '<span class="tiny rateVal">' + Number(settings.rate).toFixed(2) + '×</span>'
+  + '</div>';
+}
+
+function bindBigPlayer(){
+  const pb = $('#playBig');
+  if (pb) pb.addEventListener('click', togglePlay);
+  const sk = $('#skipFirst');
+  if (sk) sk.addEventListener('click', () => unlockSession(true));
+  bindRate($('#rateBig'));
+}
+
+function bindBar(){
+  const pb = $('#playBar');
+  if (pb) pb.addEventListener('click', togglePlay);
+  const prev = $('#prevSent'), next = $('#nextSent');
+  if (prev) prev.addEventListener('click', () => jump(-1));
+  if (next) next.addEventListener('click', () => jump(1));
+  const bar = $('#pbar');
+  if (bar) bar.addEventListener('click', e => {
+    if (!state.seekable || !state.session) return;
+    const r = bar.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    jumpTo(Math.floor(ratio * state.session.sentences.length));
+  });
+  bindRate($('#rateBar'));
+}
+
+function bindRate(el){
+  if (!el) return;
+  el.addEventListener('input', e => {
+    settings.rate = Number(e.target.value);
+    saveSettings();
+    $$('.rateVal').forEach(x => x.textContent = settings.rate.toFixed(2) + '×');
+    $$('.rateCtl').forEach(x => { if (x !== el) x.value = settings.rate; });
+    if (state.audioEl) state.audioEl.playbackRate = settings.rate;
+    if (state.playing && state.playMode === 'system') scheduleRateRestart();
+  });
+}
+
+let rateTimer = null;
+function scheduleRateRestart(){
+  clearTimeout(rateTimer);
+  rateTimer = setTimeout(() => {
+    if (!state.playing || state.playMode !== 'system' || state.idx < 0) return;
+    const at = state.idx;
+    state.playing = false;
+    stopSpeech();
+    systemPlay(at);
+  }, 500);
+}
+
+function applyMask(k){
+  const body = k === 'retell' ? $('#retellBody') : $('#readBody');
+  const mask = k === 'retell' ? $('#retellMask') : $('#readMask');
+  if (!body) return;
+  const on = !!state.revealed[k];
+  body.classList.toggle('masked', !on);
+  if (mask) mask.classList.toggle('hide', on);
+}
+
+function bindReveal(){
+  ['retell', 'read'].forEach(k => {
+    const mask = k === 'retell' ? $('#retellMask') : $('#readMask');
+    if (!mask) return;
+    const btn = mask.querySelector('[data-reveal]');
+    if (btn) btn.addEventListener('click', () => revealBlock(k));
+  });
+}
+
+function revealBlock(k){
+  state.revealed[k] = true;
+  if (state.session){
+    state.session.done.retell = true;
+    saveSession();
+  }
+  applyMask(k);
+}
+
+async function togglePlay(){
+  if (state.playing){ stopAll(); return; }
+  playSession(0);
+}
+
+async function playSession(fromIdx){
+  const s = state.session;
+  if (!s) return;
+  if (state.playing){ stopAll(); return; }
+  stopAll();
+  state.playing = true;
+  state.playMode = null;
+  state.idx = fromIdx || 0;
+  state.progress = 0;
+  setPlaying(true);
+  const from = fromIdx || 0;
+  const useCloud = settings.ttsMode === 'cloud' && apiKeyOk() && from === 0;
+  if (useCloud){
+    state.seekable = false;
+    updatePlayer();
+    setStatus('正在合成音频…');
+    try {
+      let blob = await DB.getAudio(s.id);
+      if (!blob){
+        blob = await synthCloud(fullText(s), s.lang);
+        await DB.putAudio(s.id, blob);
+      }
+      if (!state.playing || state.session !== s) return;
+      const url = URL.createObjectURL(blob);
+      const a = new Audio(url);
+      a.playbackRate = settings.rate;
+      a.ontimeupdate = () => {
+        const n = s.sentences.length;
+        const ratio = a.duration ? a.currentTime / a.duration : 0;
+        state.progress = ratio;
+        state.idx = Math.min(n - 1, Math.floor(ratio * n));
+        updatePlayer();
+      };
+      a.onended = () => { state.progress = 1; updatePlayer(); finishPlay(); };
+      a.onerror = () => { fallbackSystem('音频播放失败'); };
+      state.audioEl = a; state.audioUrl = url;
+      await a.play();
+      state.playMode = 'cloud';
+      setStatus('云端语音 · 整篇播放中');
+      updatePlayer();
+      return;
+    } catch (e){
+      await fallbackSystem(e.kind === 'http' ? '云端音频 ' + e.status : '云端音频不可用');
+      return;
+    }
+  }
+  systemPlay(from);
+}
+
+async function fallbackSystem(reason){
+  const s = state.session;
+  if (!s) return;
+  if (!voicesFor(s.lang).length){
+    state.playing = false;
+    setPlaying(false);
+    updatePlayer();
+    setStatus('这台设备没有 ' + LANGS[s.lang].native + ' 的系统语音');
+    modal({
+      title: '没有可用的朗读声音',
+      body: '<p>这台设备上找不到 ' + esc(LANGS[s.lang].native) + ' 的系统语音。</p>'
+        + '<p class="small">三条出路：<br>① 到设置里选一个已安装的「Natural / Online」音色<br>② 在系统里安装该语言语音包（Mac：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音）<br>③ 把朗读方式改成「云端音频」，需要填密钥。</p>',
+      actions: [{ label: '去设置', primary: true, onClick: () => showView('settings') }]
+    });
+    return;
+  }
+  if (reason) toast(reason + '，已改用设备语音');
+  systemPlay(0);
+}
+
+function systemPlay(from){
+  const s = state.session;
+  if (!s) return;
+  if (!voicesFor(s.lang).length){ fallbackSystem(null); return; }
+  const n = s.sentences.length;
+  const start = Math.max(0, Math.min(n - 1, from || 0));
+  state.playMode = 'system';
+  state.seekable = true;
+  state.playing = true;
+  state.idx = start;
+  state.progress = start / n;
+  setPlaying(true);
+  const v = pickVoice(s.lang);
+  setStatus('设备语音 · ' + (v ? v.name : LANGS[s.lang].native));
+  updatePlayer();
+  speakSentences(s.sentences.slice(start), s.lang, settings.rate,
+    i => {
+      state.idx = start + i;
+      state.progress = (state.idx + 0.5) / n;
+      setPlaying(true);
+      updatePlayer();
+    },
+    () => {
+      state.playing = false;
+      finishPlay();
+    });
+}
+
+function finishPlay(){
+  const s = state.session;
+  state.playing = false;
+  setPlaying(false);
+  if (s) s.done.listen = true;
+  if (!state.unlocked){ unlockSession(false); return; }
+  state.idx = -1;
+  state.progress = 0;
+  setStatus('播放完毕');
+  updatePlayer();
+  saveSession();
+}
+
+function unlockSession(bySkip){
+  const s = state.session;
+  if (!s || state.unlocked) return;
+  state.unlocked = true;
+  s.done.listen = true;
+  stopAll();
+  saveSession();
+  renderSession();
+  toast(bySkip ? '已跳过第一遍，往下滑吧' : '第一遍听完了，往下滑吧');
+}
+
+function jump(delta){
+  if (!state.seekable || !state.session) return;
+  const n = state.session.sentences.length;
+  const base = state.idx >= 0 ? state.idx : 0;
+  jumpTo(base + delta);
+}
+function jumpTo(i){
+  const s = state.session;
+  if (!s || !state.seekable) return;
+  const n = s.sentences.length;
+  const idx = Math.max(0, Math.min(n - 1, i));
+  state.playing = false;
+  stopSpeech();
+  systemPlay(idx);
+}
+
+function setPlaying(on){
+  const w = $('#wave'); if (w) w.classList.toggle('on', on);
+  const b = $('#playBig'); if (b) b.textContent = on ? '❚❚' : '▶';
+  const pb = $('#playBar'); if (pb) pb.textContent = on ? '❚❚' : '▶';
+}
+
+function setStatus(t){
+  const a = $('#audioStatus'); if (a) a.textContent = t;
+}
+
+function updatePlayer(){
+  const bar = $('#playerBar');
+  if (!bar || !state.session) return;
+  const s = state.session;
+  const n = s.sentences.length;
+  const fill = $('#pfill');
+  if (fill) fill.style.width = (Math.max(0, Math.min(1, state.progress || 0)) * 100) + '%';
+  const st = $('#barStatus');
+  if (st){
+    if (state.playMode === 'cloud'){
+      st.textContent = '云端语音 · 整篇进度（不能按句跳）';
+    } else {
+      const i = state.idx >= 0 ? state.idx + 1 : 0;
+      st.textContent = state.playing ? '设备语音 · 第 ' + i + ' / ' + n + ' 句' : '设备语音 · 共 ' + n + ' 句';
+    }
+  }
+  const prev = $('#prevSent'), next = $('#nextSent');
+  [prev, next].forEach(b => { if (b){ b.disabled = !state.seekable; b.style.opacity = state.seekable ? '' : '.22'; } });
+}
+
+function stopAll(){
+  clearTimeout(rateTimer);
+  state.playing = false;
+  state.playMode = null;
+  state.playingMode = null;
+  state.progress = 0;
+  state.idx = -1;
+  stopSpeech();
+  if (state.audioEl){ try { state.audioEl.pause(); } catch(e){} state.audioEl = null; }
+  if (state.audioUrl){ URL.revokeObjectURL(state.audioUrl); state.audioUrl = null; }
+  setPlaying(false);
+  const pr = $('#playRead'); if (pr) pr.textContent = '▶';
+  updatePlayer();
+}
+
+function retellInnerHtml(){
+  const s = state.session;
+  const levels = ['句子骨架', '关键词', '只留动词', '完全空白'];
+  const lines = s.sentences.map((sent, i) => {
+    let inner = '';
+    if (state.retellLevel === 0){
+      const st = sent.starter || sent.text.split(/\s+/).slice(0, 4).join(' ');
+      inner = esc(st) + ' <span class="blank"></span> <span class="tiny">…</span>';
+    } else if (state.retellLevel === 1){
+      const kws = (sent.keywords && sent.keywords.length ? sent.keywords : s.words.filter(w => w.sentence === i).map(w => w.term));
+      inner = kws.length ? kws.map(k => '<span class="kw">' + esc(k) + '</span>').join('') : '<span class="tiny">（无关键词）</span>';
+    } else if (state.retellLevel === 2){
+      inner = sent.verb ? '<span class="kw">' + esc(sent.verb) + '</span> <span class="blank"></span>' : '<span class="tiny">（无动词提示）</span>';
+    } else {
+      inner = '<span class="blank" style="min-width:160px"></span>';
+    }
+    return '<div class="hintline"><div class="hintnum">' + (i + 1) + '</div><div class="hintbody">' + inner + '</div></div>';
+  }).join('');
+  const chips = s.words.map(w => '<button class="wchip" data-term="' + esc(w.term) + '" data-mark="' + (w.mark || '') + '">' + esc(w.term) + '</button>').join('');
+  return ''
+  + '<p class="small muted">看着提示，用自己的话把这件事讲一遍（出声，或心里过一遍都行）。卡住时先别翻原文。</p>'
+  + '<div class="pills" style="margin:12px 0">'
+  +   levels.map((l, i) => '<button class="pill mini' + (state.retellLevel === i ? ' on' : '') + '" data-lv="' + i + '">' + l + '</button>').join('')
+  + '</div>'
+  + '<div style="margin:8px 0 14px">' + lines + '</div>'
+  + '<div style="border-top:1px solid var(--line);padding-top:12px">'
+  +   '<div class="small"><b>复述完了，标一下这 ' + s.words.length + ' 个词</b></div>'
+  +   '<div class="tiny">没点过＝用上了；点 1 下＝想了 2 秒（黄）；点 2 下＝完全没想起（灰）。</div>'
+  +   '<div class="wchips">' + chips + '</div>'
+  + '</div>'
+  + '<div class="row" style="margin-top:16px">'
+  +   '<button class="btn" id="showTip">需要小抄？</button>'
+  + '</div>';
+}
+
+function renderRetellBody(){
+  const body = $('#retellBody');
+  if (!body) return;
+  body.innerHTML = retellInnerHtml();
+  bindRetell();
+  applyMask('retell');
+}
+
+function bindRetell(){
+  $$('#retellBody .pill[data-lv]').forEach(b => b.addEventListener('click', () => {
+    state.retellLevel = Number(b.dataset.lv);
+    renderRetellBody();
+  }));
+  $$('#retellBody .wchip').forEach(b => b.addEventListener('click', () => {
+    const cur = b.dataset.mark || '';
+    const next = cur === '' ? 'fuzzy' : (cur === 'fuzzy' ? 'miss' : '');
+    b.dataset.mark = next;
+    b.classList.remove('fuzzy', 'miss');
+    if (next) b.classList.add(next);
+    const w = state.session.words.find(x => x.term === b.dataset.term);
+    if (w){ w.mark = next || null; saveSession(); }
+  }));
+  $('#showTip').addEventListener('click', () => {
+    modal({
+      title: '小抄（尽量少看）',
+      body: '<p class="small">' + state.session.sentences.map((x, i) => (i + 1) + '. ' + esc(x.zh)).join('<br>') + '</p>',
+      actions: [{ label: '收起', primary: true }]
+    });
+  });
+}
+
+function readInnerHtml(){
+  const s = state.session;
+  const sents = s.sentences.map((sent, i) => {
+    return '<div class="sent" data-i="' + i + '"><span class="art" style="font-size:16px">' + highlight(sent.text, s) + '</span>'
+      + (s.zhOn ? '<span class="zh">' + esc(sent.zh) + '</span>' : '') + '</div>';
+  }).join('');
+  const wrows = s.words.map(w => {
+    const badge = w.isNew === false ? '<span class="tag">复习</span> ' : '';
+    return '<div class="wrow"><div class="wterm">' + esc(w.term) + (w.surface && w.surface !== w.term ? '<small>文中：' + esc(w.surface) + '</small>' : '') + '</div>'
+      + '<div class="wbody">' + badge + '<span class="pos">' + esc(w.pos) + '</span>' + esc(w.zh)
+      + (w.extra ? '<br><span class="tiny">' + esc(w.extra) + '</span>' : '') + '</div></div>';
+  }).join('');
+  return ''
+  + '<div class="row" style="justify-content:space-between;margin-bottom:10px">'
+  +   '<div class="row"><button class="playbtn small" id="playRead">▶</button><span class="tiny" id="readStatus">点句子可单独重读</span></div>'
+  +   '<div class="row"><button class="btn ghost small" id="toggleZh">' + (s.zhOn ? '隐藏译文' : '显示译文') + '</button></div>'
+  + '</div>'
+  + '<div id="article" style="margin:6px 0 14px">' + sents + '</div>'
+  + '<div class="row" style="margin-bottom:14px">'
+  +   '<button class="btn small" id="copyTts">复制文本 → 打开 TTS 网站</button>'
+  +   '<button class="btn small" id="copyText">只复制文本</button>'
+  + '</div>'
+  + '<h3 style="margin-top:6px">这一篇的 ' + s.words.length + ' 个词</h3>'
+  + '<div class="wlist">' + wrows + '</div>';
+}
+
+function renderReadBody(){
+  const body = $('#readBody');
+  if (!body) return;
+  body.innerHTML = readInnerHtml();
+  bindRead();
+  applyMask('read');
+}
+
+function highlight(text, s){
+  let out = esc(text);
+  const surfaces = Array.from(new Set(s.words.map(w => w.surface).filter(Boolean))).sort((a, b) => b.length - a.length);
+  surfaces.forEach(sf => {
+    if (!text.includes(sf)) return;
+    const e = esc(sf);
+    out = out.split(e).join('<mark>' + e + '</mark>');
+  });
+  return out;
+}
+
+let readIdx = -1;
+function bindRead(){
+  const s = state.session;
+  $$('#article .sent').forEach(el => el.addEventListener('click', () => {
+    const i = Number(el.dataset.i);
+    readSentence(i);
+  }));
+  $('#playRead').addEventListener('click', () => {
+    if (playingRead()) { stopAll(); return; }
+    playReadAll();
+  });
+  $('#toggleZh').addEventListener('click', () => { s.zhOn = !s.zhOn; renderReadBody(); });
+  $('#copyText').addEventListener('click', async () => {
+    await copyText(fullText(s));
+    toast('已复制短文');
+  });
+  $('#copyTts').addEventListener('click', async () => {
+    await copyText(fullText(s));
+    window.open('https://www.text-to-speech.cn/', '_blank', 'noopener');
+    toast('已复制，粘贴到网站里播放');
+  });
+}
+
+function fullText(s){ return s.sentences.map(x => x.text).join(' '); }
+
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); }
+  catch (e){
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e2){}
+    ta.remove();
+  }
+}
+
+function playingRead(){ return state.playingMode === 'read'; }
+
+function setCur(i){
+  $$('#article .sent').forEach(el => el.classList.toggle('cur', Number(el.dataset.i) === i));
+  const el = $('#article .sent[data-i="' + i + '"]');
+  if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function readSentence(i){
+  const s = state.session;
+  stopAll();
+  state.playingMode = 'single';
+  const st = $('#readStatus');
+  if (!voicesFor(s.lang).length){
+    state.playingMode = null;
+    if (st) st.textContent = '这台设备没有' + LANGS[s.lang].native + '系统语音，单句重读暂不可用';
+    modal({
+      title: '单句重读需要系统语音',
+      body: '<p>这台设备上找不到 ' + esc(LANGS[s.lang].native) + ' 的系统语音。</p>'
+        + '<p class="small">你可以：<br>① 用上方吸顶播放器的 ▶ 整篇播放（云端音频不依赖系统语音）<br>② 到设置里选一个已安装的「Natural / Online」音色<br>③ 在系统里装好该语言的语音包</p>',
+      actions: [{ label: '知道了', primary: true }]
+    });
+    return;
+  }
+  if (st) st.textContent = '正在读第 ' + (i + 1) + ' 句';
+  speakSentences([s.sentences[i]], s.lang, settings.rate, () => setCur(i), () => { setCur(-1); state.playingMode = null; if (st) st.textContent = '点句子可单独重读'; });
+}
+
+async function playReadAll(startAt){
+  const s = state.session;
+  stopAll();
+  state.playingMode = 'read';
+  const from = startAt || 0;
+  const st = $('#readStatus');
+  const btn = $('#playRead'); if (btn) btn.textContent = '❚❚';
+  if (settings.ttsMode === 'cloud' && apiKeyOk() && from === 0){
+    let blob = await DB.getAudio(s.id);
+    try {
+      if (!blob){ st.textContent = '合成中…'; blob = await synthCloud(fullText(s), s.lang); await DB.putAudio(s.id, blob); }
+      if (state.playingMode !== 'read' || state.session !== s) return;
+      const url = URL.createObjectURL(blob);
+      const a = new Audio(url); a.playbackRate = settings.rate;
+      a.ontimeupdate = () => {
+        const ratio = a.duration ? a.currentTime / a.duration : 0;
+        const idx = Math.min(s.sentences.length - 1, Math.floor(ratio * s.sentences.length));
+        setCur(idx);
+      };
+      a.onended = () => { state.playingMode = null; setCur(-1); if (btn) btn.textContent = '▶'; st.textContent = '点句子可单独重读'; };
+      state.audioEl = a; state.audioUrl = url;
+      await a.play();
+      st.textContent = '云端语音播放中';
+      return;
+    } catch (e){
+      st.textContent = '云端不可用，改用设备语音';
+    }
+  }
+  speakSentences(s.sentences.slice(from), s.lang, settings.rate,
+    (i) => setCur(from + i),
+    () => { state.playingMode = null; setCur(-1); if (btn) btn.textContent = '▶'; if (st) st.textContent = '点句子可单独重读'; });
+}
+
+async function saveSession(){
+  if (state.session) await DB.put(state.session);
+}
+
+async function finishSession(){
+  const s = state.session;
+  s.done.read = true; s.done.listen = true; s.done.retell = true;
+  await DB.put(s);
+  stopAll();
+  const missed = s.words.filter(w => w.mark === 'miss' || w.mark === 'fuzzy').length;
+  state.history = await DB.all();
+  state.pool = await loadPool(s.lang);
+  state.pickedOld = pickOld(state.pool, []);
+  state.session = null;
+  state.step = 1;
+  renderToday();
+  modal({
+    title: '今天完成',
+    body: '<p>' + s.words.length + ' 个词和这篇短文已经存档。' + (missed ? '有 ' + missed + ' 个词进了生词池。' : '') + '</p>'
+      + '<p class="small muted">这篇会在第 2 / 3 / 7 天回到「历史」的复习队列，到时候点一下就能回听。</p>',
+    actions: [{ label: '看历史', onClick: () => showView('history') }, { label: '好', primary: true }]
+  });
+}
+
+/* ============================ 视图切换 ============================ */
+const VIEWS = { today: '#view-today', history: '#view-history', help: '#view-help', settings: '#view-settings' };
+function showView(name){
+  if (name !== 'today') stopAll();
+  Object.keys(VIEWS).forEach(k => $(VIEWS[k]).classList.toggle('hide', k !== name));
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.view === name));
+  if (name === 'today') renderToday();
+  if (name === 'history') renderHistory();
+  if (name === 'help') renderHelp();
+  if (name === 'settings') renderSettings();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================ 历史 ============================ */
+const listState = { filter: '', sel: new Set(), selecting: false };
+
+async function renderHistory(){
+  const root = $('#view-history');
+  root.innerHTML = '<div class="card"><div class="tiny">读取中…</div></div>';
+  state.history = await DB.all();
+  const due = dueSessions(state.history);
+  const q = listState.filter.trim().toLowerCase();
+  const list = state.history.filter(s => {
+    if (!q) return true;
+    if ((s.title || '').toLowerCase().includes(q)) return true;
+    if ((s.sentences || []).some(x => x.text.toLowerCase().includes(q))) return true;
+    return (s.words || []).some(w => (w.term || '').toLowerCase().includes(q) || (w.zh || '').includes(q));
+  });
+
+  const dueHtml = due.length
+    ? '<div class="banner"><b>今天有 ' + due.length + ' 篇该回听</b>'
+      + '<div class="tiny" style="margin:4px 0 8px">不用重做，听一遍 60 秒就够。</div>'
+      + due.map(d => '<div class="row" style="margin-top:6px"><span class="small" style="flex:1">' + esc(d.session.title) + ' <span class="muted">· 第 ' + d.gap + ' 天</span></span><button class="btn small" data-review="' + d.session.id + '">回听</button></div>').join('')
+      + '</div>'
+    : '';
+
+  const items = list.length
+    ? list.map(s => {
+        const sel = listState.sel.has(s.id);
+        return '<div class="listitem">'
+          + '<input type="checkbox" data-check="' + s.id + '"' + (sel ? ' checked' : '') + ' style="margin-top:4px">'
+          + '<div class="meta">'
+          +   '<div class="ttl">' + esc(s.title) + (s.demo ? ' <span class="tag">演示</span>' : '') + '</div>'
+          +   '<div class="sub">' + s.date + ' · ' + LANGS[s.lang].native + (s.level ? ' · ' + esc(s.level) : '') + ' · ' + (s.words || []).length + ' 个词' + (s.done && s.done.read ? '' : ' · 未完成') + '</div>'
+          +   '<div class="sub" style="margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc((s.sentences || []).map(x => x.text).join(' ').slice(0, 46)) + '…</div>'
+          + '</div>'
+          + '<button class="btn small" data-open="' + s.id + '">打开</button>'
+          + '</div>';
+      }).join('')
+    : '<p class="tiny">还没有记录。完成一篇短文后会出现在这里。</p>';
+
+  root.innerHTML = ''
+  + dueHtml
+  + '<div class="card">'
+  +   '<div class="row" style="justify-content:space-between">'
+  +     '<h2 style="margin:0">历史记录</h2>'
+  +     '<span class="tiny">' + state.history.length + ' 篇</span>'
+  +   '</div>'
+  +   '<input type="text" id="searchBox" placeholder="搜索标题、正文或单词" style="margin:10px 0" value="' + esc(listState.filter) + '">'
+  +   '<div class="row" style="justify-content:space-between;margin-bottom:6px">'
+  +     '<button class="btn small" id="selAll">' + (listState.sel.size && listState.sel.size === list.length ? '取消全选' : '全选') + '</button>'
+  +     '<button class="btn small danger" id="delSel"' + (listState.sel.size ? '' : ' disabled') + '>删除所选 (' + listState.sel.size + ')</button>'
+  +   '</div>'
+  +   '<div class="wlist">' + items + '</div>'
+  + '</div>'
+  + '<div class="card tight"><div class="tiny">数据存在于这台设备的浏览器里，换设备请到「设置 → 导出」。</div></div>';
+
+  $('#searchBox').addEventListener('input', e => {
+    listState.filter = e.target.value;
+    clearTimeout(renderHistory._t);
+    renderHistory._t = setTimeout(() => { listState.refocus = true; renderHistory(); }, 200);
+  });
+  $('#selAll').addEventListener('click', () => {
+    if (listState.sel.size === list.length) listState.sel.clear();
+    else list.forEach(s => listState.sel.add(s.id));
+    renderHistory();
+  });
+  $('#delSel').addEventListener('click', () => {
+    if (!listState.sel.size) return;
+    const n = listState.sel.size;
+    modal({
+      title: '删除 ' + n + ' 条记录？',
+      body: '<p>词表、短文和音频缓存会一起删除，不能恢复。建议先导出一份备份。</p>',
+      actions: [{ label: '取消' }, { label: '删除', onClick: async () => { await DB.remove(Array.from(listState.sel)); listState.sel.clear(); renderHistory(); toast('已删除 ' + n + ' 条'); } }]
+    });
+  });
+  $$('#view-history [data-check]').forEach(cb => cb.addEventListener('change', () => {
+    if (cb.checked) listState.sel.add(cb.dataset.check); else listState.sel.delete(cb.dataset.check);
+    renderHistory();
+  }));
+  $$('#view-history [data-open]').forEach(b => b.addEventListener('click', () => {
+    const s = state.history.find(x => x.id === b.dataset.open);
+    if (s) openSession(s, 3);
+  }));
+  $$('#view-history [data-review]').forEach(b => b.addEventListener('click', () => {
+    const s = state.history.find(x => x.id === b.dataset.review);
+    const gap = dayDiff(s.date, todayStr());
+    s.reviewed = s.reviewed || [];
+    if (!s.reviewed.includes(gap)) s.reviewed.push(gap);
+    DB.put(s);
+    openSession(s, 1);
+    setTimeout(() => { playSession(); }, 260);
+  }));
+
+  if (listState.refocus){
+    listState.refocus = false;
+    const sb = $('#searchBox');
+    if (sb){ sb.focus(); const L = sb.value.length; sb.setSelectionRange(L, L); }
+  }
+}
+
+function openSession(s, step){
+  stopAll();
+  enterSession(s, true);
+  state.retellLevel = 0;
+  showView('today');
+}
+
+/* ============================ 帮助 ============================ */
+function renderHelp(){
+  $('#view-help').innerHTML = ''
+  + '<div class="card">'
+  +   '<h1>帮助</h1>'
+  +   '<p class="small muted">三步走完就算完成：听 → 复述 → 阅读。总共 10–15 分钟。</p>'
+  +   '<div class="row" style="margin-top:12px">'
+  +     '<button class="btn small" id="replayGuide">重新播放新手引导</button>'
+  +     '<button class="btn small" id="replayRetell">复述标记怎么用</button>'
+  +   '</div>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>每天怎么走</h2>'
+  +   '<p class="small"><b>1. 听（2 分钟）</b>：文字是遮住的，下面的复述和阅读也还看不见。第一遍不用全懂，抓住是谁、在哪、发生了什么。听完第一遍后，下面的内容才会解锁，播放器会缩成吸顶的一条。</p>'
+  +   '<p class="small"><b>回听</b>：吸顶播放器上有进度条和 ⏪ ⏩，可以按句后退 / 前进，点进度条也能直接跳到某一句。语速 0.5–1.5 倍，拖了立刻生效。整篇云端音频不能按句跳，这时两个键会变透明。</p>'
+  +   '<p class="small"><b>2. 复述（5 分钟）</b>：先点「显示复述提示」，看着提示用自己的话讲一遍。提示不够就点「完全空白」，太狠就退回「句子骨架」。讲完点一下卡住的词。</p>'
+  +   '<p class="small"><b>3. 阅读（5 分钟）</b>：点「显示短文与词表」后，对照译文和词条看一遍，再点播放边看边听一遍。这是最难也最值钱的一步。</p>'
+  +   '<p class="tiny">点「完成今天」后，这篇会在第 2 / 3 / 7 天回到历史的复习队列。回听只花 1 分钟，不用重做题。</p>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>输入单词</h2>'
+  +   '<p class="small">每行一个，最多 10 个。只写外文原型就够，中文可留空：</p>'
+  +   '<pre class="tiny" style="background:var(--soft);padding:10px;border-radius:8px;overflow:auto;line-height:1.8">resilient\nnegotiate\nTisch\n食べる</pre>'
+  +   '<p class="small">也可以把背单词软件里的「单词 + 中文」整段粘进来，下面几种写法都能识别：</p>'
+  +   '<pre class="tiny" style="background:var(--soft);padding:10px;border-radius:8px;overflow:auto;line-height:1.8">resilient | 有韧性的\nder Tisch\t桌子\n1. 食べる  吃</pre>'
+  +   '<p class="tiny">德语名词请写原型（Tisch 或 der Tisch 都行），工具会让 AI 补上冠词、复数和变格信息。</p>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>Google 密钥怎么拿（免费）</h2>'
+  +   '<p class="small">密钥（API key）就是一张免费的会员卡，网页拿着它去请 Google 的模型写短文。</p>'
+  +   '<p class="small">1. 打开 aistudio.google.com，用 Google 账号登录<br>2. 点 Get API key → Create API key<br>3. 复制那串以 AIza 开头的字符<br>4. 回到「设置」粘贴 → 保存</p>'
+  +   '<p class="tiny">它只存在这台设备的浏览器里；导出的备份不包含它；不要截图或发给别人。怀疑泄露就去 AI Studio 删掉重建。</p>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>数据存在哪 / 怎么彻底删除</h2>'
+  +   '<p class="small">三种数据分开：<b>学习记录</b>（词表、短文、标记）、<b>音频缓存</b>（朗读文件）、<b>配置</b>（密钥、语速）。</p>'
+  +   '<p class="small">它们都在你当前这台设备的浏览器里（' + STORAGE_MODE.label + '），不在云端、不在 GitHub。</p>'
+  +   '<p class="small"><b>彻底删除的顺序：</b><br>① 设置 → 数据 → 导出备份（想留的话）<br>② 设置 → 数据 → 重置应用（清空记录与音频）<br>③ 删掉 HTML 文件，或在 GitHub 里关闭 / 删除 Pages<br>④ 想更彻底：浏览器设置 → 网站数据 → 删除该站点</p>'
+  +   '<p class="tiny">注意：只删 HTML 文件不等于删除数据，数据会留在浏览器里。换网址或换设备时，请先导出再导入。</p>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>发给朋友</h2>'
+  +   '<p class="small">把网址发过去就行。朋友打开看到的是空工具：密钥、记录都在各自设备上，互相看不到。</p>'
+  +   '<p class="small">对方没有密钥也能用：先用演示数据，或者自己贴一个免费密钥。</p>'
+  +   '<p class="tiny">不要把带密钥的页面截图或导出文件发给别人。</p>'
+  + '</div>';
+
+  $('#replayGuide').addEventListener('click', () => showOnboarding(0));
+  $('#replayRetell').addEventListener('click', showRetellGuide);
+}
+
+/* ============================ 设置 ============================ */
+const VOICE_SAMPLE = {
+  en: 'This is how English will sound in your texts.',
+  de: 'So klingt Deutsch in deinem Text.',
+  ja: 'これは日本語の声です。'
+};
+function voiceSelectHtml(k){
+  const list = voicesFor(k);
+  const cur = (settings.voicePref && settings.voicePref[k]) || '';
+  const opts = ['<option value="">自动（优先 Natural / Online / Neural）</option>'];
+  list.forEach(v => {
+    const val = v.voiceURI || v.name;
+    opts.push('<option value="' + esc(val) + '"' + (cur === val ? ' selected' : '') + '>' + esc(v.name) + ' · ' + esc(v.lang) + '</option>');
+  });
+  if (!list.length) opts.push('<option value="" disabled>没有找到该语言的音色</option>');
+  return '<label class="f">' + LANGS[k].native + '</label>'
+    + '<div class="row"><select class="voiceSel" data-lang="' + k + '" style="flex:1;min-width:0;width:auto">' + opts.join('') + '</select>'
+    + '<button class="btn small" data-preview="' + k + '">试听</button></div>';
+}
+function previewVoice(k){
+  refreshVoices();
+  if (!voicesFor(k).length){ toast('这台设备没有 ' + LANGS[k].native + ' 的音色'); return; }
+  stopSpeech();
+  speakSentences([VOICE_SAMPLE[k]], k, settings.rate, null, null);
+}
+
+async function renderSettings(){
+  refreshVoices();
+  const sessions = await DB.all();
+  const ac = await DB.audioCount();
+  $('#view-settings').innerHTML = ''
+  + '<div class="card">'
+  +   '<h2>Google Gemini</h2>'
+  +   '<label class="f">API 密钥</label>'
+  +   '<input type="password" id="keyInput" placeholder="AIza…" value="' + esc(settings.apiKey) + '">'
+  +   '<label class="f">模型</label>'
+  +   '<input type="text" id="modelInput" value="' + esc(settings.model) + '">'
+  +   '<p class="tiny">模型名以 AI Studio 页面上显示的为准，默认 gemini-2.5-flash。</p>'
+  +   '<div class="row" style="margin-top:12px">'
+  +     '<button class="btn primary" id="saveKey">保存</button>'
+  +     '<button class="btn" id="testKey">测试连接</button>'
+  +     '<button class="btn ghost" id="clearKey">清除密钥</button>'
+  +   '</div>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>朗读</h2>'
+  +   '<label class="f">方式</label>'
+  +   '<select id="ttsMode">'
+  +     '<option value="cloud"' + (settings.ttsMode === 'cloud' ? ' selected' : '') + '>云端音频（Gemini TTS，可锁屏续播，推荐）</option>'
+  +     '<option value="system"' + (settings.ttsMode === 'system' ? ' selected' : '') + '>设备语音（离线、即时，但音质看设备）</option>'
+  +   '</select>'
+  +   '<p class="tiny">云端第一次播放要合成几秒，之后会缓存在本机，回听不再消耗额度。整篇云端音频无法按句跳，设备语音可以。</p>'
+  +   '<div class="row" style="margin-top:12px">'
+  +     '<button class="btn" id="voiceCheck">语音体检</button>'
+  +   '</div>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>音色</h2>'
+  +   '<p class="tiny">只影响「设备语音」。留空＝自动挑，优先带 Natural / Online / Neural 字样的音色。选完会自动试听一句。</p>'
+  +   Object.keys(LANGS).map(voiceSelectHtml).join('')
+  +   '<div class="row" style="margin-top:12px"><button class="btn small" id="reloadVoices">刷新音色列表</button></div>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>数据</h2>'
+  +   '<div class="row" style="justify-content:space-between"><span class="small muted">学习记录</span><span class="small">' + sessions.length + ' 篇</span></div>'
+  +   '<div class="row" style="justify-content:space-between"><span class="small muted">音频缓存</span><span class="small">' + ac + ' 段</span></div>'
+  +   '<div class="row" style="justify-content:space-between"><span class="small muted">存储方式</span><span class="small">' + STORAGE_MODE.label + '</span></div>'
+  +   '<p class="tiny" style="margin-top:8px">记录在这台设备的浏览器里，不在云端。换设备请导出后导入。</p>'
+  +   '<div class="row" style="margin-top:12px">'
+  +     '<button class="btn" id="exportBtn">导出全部</button>'
+  +     '<button class="btn" id="importBtn">导入</button>'
+  +     '<button class="btn" id="clearAudio">清空音频缓存</button>'
+  +   '</div>'
+  +   '<div class="row" style="margin-top:8px">'
+  +     '<button class="btn danger" id="resetBtn">重置应用</button>'
+  +   '</div>'
+  + '</div>'
+
+  + '<div class="card tight">'
+  +   '<div class="tiny">LearnWordsByTexts · 单文件网页应用 · 数据只在本地</div>'
+  + '</div>';
+
+  $('#saveKey').addEventListener('click', () => {
+    settings.apiKey = $('#keyInput').value.trim();
+    settings.model = $('#modelInput').value.trim() || settings.model;
+    saveSettings();
+    toast('已保存');
+    renderToday();
+  });
+  $('#clearKey').addEventListener('click', () => {
+    settings.apiKey = ''; saveSettings(); renderSettings(); toast('已清除密钥');
+  });
+  $('#testKey').addEventListener('click', async () => {
+    settings.apiKey = $('#keyInput').value.trim();
+    settings.model = $('#modelInput').value.trim() || settings.model;
+    saveSettings();
+    const btn = $('#testKey');
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 测试中';
+    try {
+      const cand = await callGemini([{ text: 'Return exactly this JSON: {"ok":true}' }], { temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 60 }, { retry: false });
+      const txt = (cand.content.parts || []).map(p => p.text || '').join('');
+      modal({ title: '连接正常', body: '<p>模型回了：<code>' + esc(txt.slice(0, 80)) + '</code></p><p class="tiny">说明密钥、模型名和网络都通了。</p>', actions: [{ label: '好', primary: true }] });
+    } catch (e){
+      showApiError(e, () => $('#testKey') && $('#testKey').click());
+    } finally {
+      btn.disabled = false; btn.textContent = '测试连接';
+    }
+  });
+  $('#ttsMode').addEventListener('change', e => { settings.ttsMode = e.target.value; saveSettings(); toast('已切换朗读方式'); });
+  $('#voiceCheck').addEventListener('click', showVoiceReport);
+  $$('.voiceSel').forEach(sel => sel.addEventListener('change', () => {
+    settings.voicePref = settings.voicePref || {};
+    settings.voicePref[sel.dataset.lang] = sel.value;
+    saveSettings();
+    previewVoice(sel.dataset.lang);
+  }));
+  $$('[data-preview]').forEach(b => b.addEventListener('click', () => previewVoice(b.dataset.preview)));
+  const rv = $('#reloadVoices');
+  if (rv) rv.addEventListener('click', () => { refreshVoices(); renderSettings(); });
+  $('#exportBtn').addEventListener('click', exportData);
+  $('#importBtn').addEventListener('click', importData);
+  $('#clearAudio').addEventListener('click', async () => {
+    const n = await DB.clearAudio();
+    toast('已清空 ' + n + ' 段音频缓存');
+    renderSettings();
+  });
+  $('#resetBtn').addEventListener('click', () => {
+    modal({
+      title: '重置应用',
+      body: '<p>会清空所有学习记录、音频缓存和设置（包括密钥）。这个操作不能恢复。</p>'
+        + '<p class="small">确认请输入「重置」：</p><input type="text" id="resetWord" placeholder="重置">',
+      actions: [{ label: '取消' }, { label: '确认重置', onClick: () => {
+        if ($('#resetWord').value.trim() !== '重置'){ toast('输入不匹配，已取消'); return; }
+        DB.reset().then(() => {
+          localStorage.removeItem(SETTINGS_KEY);
+          settings = Object.assign({}, DEFAULT_SETTINGS);
+          state.session = null; state.history = []; state.pool = [];
+          listState.sel.clear();
+          renderToday(); renderSettings();
+          toast('已重置');
+        });
+      } }]
+    });
+  });
+}
+
+function showVoiceReport(){
+  refreshVoices();
+  const rows = Object.keys(LANGS).map(k => {
+    const list = voicesFor(k);
+    if (!list.length){
+      return '<div class="voice-item"><span>' + LANGS[k].native + '（' + LANGS[k].tts + '）</span><span style="color:var(--danger)">没有可用音色</span></div>';
+    }
+    const best = pickVoice(k);
+    return '<div class="voice-item"><span>' + LANGS[k].native + '（' + list.length + ' 个）</span>'
+      + '<span class="muted" style="text-align:right;max-width:62%">自动选：' + esc(best ? best.name : '') + '</span></div>';
+  }).join('');
+  const missing = Object.keys(LANGS).filter(k => !voicesFor(k).length).map(k => LANGS[k].native);
+  modal({
+    title: '语音体检',
+    body: '<p class="small">下面是这台设备浏览器实际能找到的音色（来自系统）。</p>'
+      + rows
+      + (missing.length
+        ? '<p class="small warnbox">缺 ' + missing.join('、') + '。可以：① 装系统语音包（Mac：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音）② 用云端音频。</p>'
+        : '<p class="small muted">三种语言都有可用音色。带 Natural / Online 字样的通常最好听，可以在「音色」里手动指定。</p>')
+      + '<p class="tiny">手机上的可用音色来自系统 TTS，装了 Google 语音包的安卓最全。</p>',
+    actions: [{ label: '好', primary: true }]
+  });
+}
+
+async function exportData(){
+  const sessions = await DB.all();
+  const payload = { app: 'LearnWordsByTexts', version: 1, exportedAt: new Date().toISOString(), sessions };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'LearnWordsByTexts-' + todayStr() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('已导出 ' + sessions.length + ' 条记录');
+}
+
+function importData(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = () => {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        const list = Array.isArray(data) ? data : (data.sessions || []);
+        if (!list.length) throw new Error('没有记录');
+        for (const s of list){ if (s && s.id) await DB.put(s); }
+        state.history = await DB.all();
+        listState.sel.clear();
+        renderHistory(); renderSettings();
+        toast('已导入 ' + list.length + ' 条记录');
+      } catch (e){
+        modal({ title: '导入失败', body: '<p>文件不是有效的备份，或者格式不对。</p><p class="tiny">' + esc(e.message) + '</p>', actions: [{ label: '好', primary: true }] });
+      }
+    };
+    reader.readAsText(f);
+  };
+  input.click();
+}
+
+/* ============================ 新手引导 ============================ */
+function showOnboarding(i){
+  const slides = [
+    {
+      t: '欢迎 · 每天 10 个词',
+      b: '<p>这个工具用「一篇短文」把当天的 10 个词串起来，分三步走：</p>'
+        + '<p class="small"><b>① 听</b>：文字遮住，先只听。听完第一遍，下面的复述和阅读才会解锁<br><b>② 复述</b>：点「显示提示」，看着提示讲一遍<br><b>③ 阅读</b>：点「显示短文」，看原文、译文和词条，再边看边听一遍</p>'
+        + '<p class="tiny">总共 10–15 分钟。做完会自动存档，第 2 / 3 / 7 天提醒你回听。</p>'
+    },
+    {
+      t: '两个准备',
+      b: '<p><b>1. 密钥（可选）</b>：生成短文需要一次免费的 Google AI 调用。没填也能用——点「先用演示数据看流程」。</p>'
+        + '<p><b>2. 朗读</b>：默认用云端音频（音质稳、可锁屏续播）；也可以在设置里挑设备音色，优先选带 Natural / Online 字样的。</p>'
+        + '<p class="tiny">所有记录只存在这台设备的浏览器里，不会上传。</p>'
+    },
+    {
+      t: '怎么开始',
+      b: '<p>把今天背的 10 个词粘进输入框（每行一个，中文可省），选语言和难度，点「生成短文」。</p>'
+        + '<p class="small">德语名词只写原型就行，工具会补冠词和复数。日语写辞书形。</p>'
+        + '<p class="tiny">随时可以在「帮助」里重看这份引导。</p>'
+    }
+  ];
+  const s = slides[i];
+  const dots = slides.map((_, k) => '<i class="' + (k === i ? 'on' : '') + '"></i>').join('');
+  modal({
+    title: s.t,
+    body: s.b + '<div class="dots">' + dots + '</div>',
+    dismissable: false,
+    actions: [
+      { label: '跳过', ghost: true, onClick: () => { settings.onboarded = true; saveSettings(); } },
+      i < slides.length - 1
+        ? { label: '下一步', primary: true, onClick: () => { showOnboarding(i + 1); } }
+        : { label: '开始', primary: true, onClick: () => { settings.onboarded = true; saveSettings(); } }
+    ]
+  });
+}
+
+function showRetellGuide(){
+  modal({
+    title: '复述标记怎么用',
+    body: '<p>复述完，看一眼下面这排词，问自己「刚才说的时候用上了吗」：</p>'
+      + '<p class="small">· 用上了 → <b>不用点</b><br>· 想了 2 秒才出来 → <b>点 1 下</b>（变黄）<br>· 完全没想起来 → <b>点 2 下</b>（变灰）</p>'
+      + '<p class="tiny">这些标记只做三件事：进生词池、决定明天带哪 2 个旧词、决定这篇在第 2 / 3 / 7 天回听队列里的优先级。不用纠结准确，凭第一感觉点。</p>',
+    actions: [{ label: '知道了', primary: true }]
+  });
+}
+
+/* ============================ 启动 ============================ */
+function bindNav(){
+  $$('#nav button').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+}
+
+function syncHeaderH(){
+  const h = document.querySelector('header');
+  if (h) document.documentElement.style.setProperty('--headerH', h.offsetHeight + 'px');
+}
+window.addEventListener('resize', syncHeaderH);
+
+async function init(){
+  syncHeaderH();
+  loadSettings();
+  await DB.init();
+  state.draft.lang = settings.lang;
+  state.draft.level = settings.level;
+  try {
+    state.pool = await loadPool(settings.lang);
+    state.pickedOld = pickOld(state.pool, []);
+    state.history = await DB.all();
+  } catch (e){}
+  bindNav();
+  renderToday();
+  if (!settings.onboarded) setTimeout(() => showOnboarding(0), 400);
+}
+
+document.addEventListener('visibilitychange', () => {
+  // 云端音频要能在锁屏/切后台时继续播，所以只在没有音频播放时停掉系统语音
+  if (document.hidden && !(state.audioEl && !state.audioEl.paused)) stopSpeech();
+});
+
+init();
+</script>
+
+
+</body></html>
