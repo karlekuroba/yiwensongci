@@ -136,6 +136,30 @@ textarea{resize:vertical;min-height:110px;font-family:ui-monospace,"SF Mono",Men
 }
 .skipbtn{border:0;background:none;color:var(--muted);font-size:12px;text-decoration:underline;padding:6px}
 
+/* 记录板 */
+.noteboard{margin:14px 0 4px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.nb-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--soft)}
+.nb-head .nb-title{flex:1;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+.nb-head .nb-title small{color:var(--muted);font-weight:400;font-size:12px}
+.nb-body{padding:10px 12px 12px;border-top:1px solid var(--line);background:var(--card)}
+.nb-block{margin-top:10px;border:1px solid var(--line);border-radius:var(--r);background:#fff}
+.nb-block:first-child{margin-top:0}
+@media (prefers-color-scheme: dark){.nb-block{background:#fff;color:#111}}
+.nb-btools{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line);background:var(--soft);flex-wrap:wrap}
+.nb-btools .spacer{flex:1}
+.nb-mode{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.nb-mode button{border:0;background:var(--card);padding:5px 10px;font-size:12.5px;color:var(--muted)}
+.nb-mode button.on{background:var(--brand);color:#fff}
+.nb-tbtn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:5px 9px;font-size:12.5px;display:inline-flex;align-items:center;gap:3px}
+.nb-tbtn:disabled{opacity:.35}
+.nb-text{width:100%;min-height:84px;border:0;outline:none;resize:vertical;padding:10px 12px;font-size:15px;line-height:1.7;background:#fff;color:#111;border-radius:0 0 var(--r) var(--r);font-family:inherit}
+.nb-canvas{display:block;width:100%;height:180px;background:#fff;cursor:crosshair;touch-action:none;border-radius:0 0 var(--r) var(--r)}
+.nb-canvas.eraser{cursor:cell}
+.nb-foot{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.nb-foot .tiny{color:var(--muted);flex:1;min-width:140px}
+.nb-add{margin-top:10px}
+.nb-del{border:0;background:none;color:var(--danger);font-size:12px;padding:4px 6px}
+
 .playwrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 0 18px}
 .playbtn{
   width:88px;height:88px;border-radius:50%;border:0;background:var(--brand);color:#fff;
@@ -245,6 +269,12 @@ details[open] summary{margin-bottom:8px}
   .wterm{min-width:78px}
   h1{font-size:20px}
 }
+@media print{
+  body *{visibility:hidden}
+  .printarea,.printarea *{visibility:visible}
+  .printarea{display:block;position:absolute;left:0;top:0;width:100%;padding:24px}
+}
+.printarea{display:none}
 </style>
 </head>
 <body>
@@ -269,6 +299,7 @@ details[open] summary{margin-bottom:8px}
 
 <div id="modal-root"></div>
 <div id="toast-root"></div>
+<div class="printarea" id="printarea"></div>
 
 <script>
 "use strict";
@@ -291,7 +322,7 @@ const LEVELS = ['auto','A1','A2','B1','B2','C1','C2'];
 /* ============================ 设置 ============================ */
 const SETTINGS_KEY = 'lwbt.settings.v1';
 const DEFAULT_SETTINGS = {
-  apiKey: '', model: 'gemini-2.5-flash',
+  apiKey: '', model: 'gemini-3.8-flash',
   lang: 'en', level: 'auto', newCount: 10, poolOn: true,
   ttsMode: 'cloud', rate: 0.95, voicePref: {},
   onboarded: false, retellOnboarded: false, cloudWarned: false
@@ -681,7 +712,7 @@ function showApiError(e, retry){
   } else if (e.kind === 'timeout'){
     m = {
       t: '请求超时',
-      b: '<p>25 秒内没等到 Google 的回应。通常是模型排队或网络很慢。</p><p class="small">① 直接重试；② 换回 <code>gemini-2.5-flash</code>；③ 如果开了 VPN，确认浏览器也在走代理。</p>' + raw,
+      b: '<p>25 秒内没等到 Google 的回应。通常是模型排队或网络很慢。</p><p class="small">① 直接重试；② 换回 <code>gemini-3.8-flash</code>；③ 如果开了 VPN，确认浏览器也在走代理。</p>' + raw,
       a: [retryBtn, goSet]
     };
   } else if (e.kind === 'network'){
@@ -694,7 +725,7 @@ function showApiError(e, retry){
     m = {
       t: 'Google 侧暂时不可用（503）',
       b: '<p><b>这不是你的密钥问题。</b>模型此刻过载或服务临时中断，工具已经自动重试过一次。</p>'
-        + '<p class="small">建议：① 等 5–30 分钟再试；② 把模型换回 <code>gemini-2.5-flash</code>；③ 打开 AI Studio 网页用同一个模型试一下，确认是不是账号或地区问题。</p>' + raw,
+        + '<p class="small">建议：① 等 5–30 分钟再试；② 把模型换回 <code>gemini-3.8-flash</code>；③ 打开 AI Studio 网页用同一个模型试一下，确认是不是账号或地区问题。</p>' + raw,
       a: [retryBtn, goSet]
     };
   } else if (e.kind === 'http' && e.status === 429){
@@ -712,7 +743,7 @@ function showApiError(e, retry){
   } else if (e.kind === 'http' && e.status === 404){
     m = {
       t: '模型名不对（404）',
-      b: '<p>这个模型 ID 不存在或你的账号不能用。</p><p class="small">在 AI Studio 里打开任意模型，点右上角 Get code，看 <code>model:</code> 后面那串，原样填进设置。默认值 <code>gemini-2.5-flash</code> 是可用的。</p>' + raw,
+      b: '<p>这个模型 ID 不存在或你的账号不能用。</p><p class="small">在 AI Studio 里打开任意模型，点右上角 Get code，看 <code>model:</code> 后面那串，原样填进设置。默认值 <code>gemini-3.8-flash</code>。</p>' + raw,
       a: [{ label: '去设置', primary: true, onClick: () => showView('settings') }]
     };
   } else if (e.kind === 'http'){
@@ -966,7 +997,8 @@ const state = {
   pool: [], pickedOld: [],
   draft: { words: '', lang: settings.lang, level: settings.level },
   playing: false, audioEl: null, audioUrl: null, playingMode: null,
-  history: [], due: []
+  history: [], due: [],
+  notes: [], notesOpen: false, nbIdSeq: 1
 };
 
 /* ============================ 今日页渲染 ============================ */
@@ -1107,6 +1139,7 @@ function sessionHtml(){
   +   '</div>'
   +   '<div id="listenBig"></div>'
   +   '<div id="playerBar" class="player hide"></div>'
+  +   '<div id="notesZone"></div>'
   +   '<div id="belowZone" class="hide">'
   +     '<section class="sesssec">'
   +       '<div class="sechead"><span class="secno">②</span><h3>复述</h3></div>'
@@ -1137,6 +1170,7 @@ function enterSession(s, unlocked){
   state.idx = -1;
   state.progress = 0;
   state.seekable = !(settings.ttsMode === 'cloud' && apiKeyOk());
+  loadNotes(s);
 }
 state.unlocked = false;
 state.seekable = true;
@@ -1154,6 +1188,7 @@ function bindSession(){
   });
   const fin = $('#finish');
   if (fin) fin.addEventListener('click', finishSession);
+  renderNotes();
   renderSession();
 }
 
@@ -1299,6 +1334,342 @@ function revealBlock(k){
     saveSession();
   }
   applyMask(k);
+}
+
+/* ============================ 记录板 ============================ */
+const NB_MAX = 10;
+function newNoteBlock(){
+  return { id: state.nbIdSeq++, mode: 'text', text: '', strokes: [], tool: 'pen' };
+}
+function loadNotes(s){
+  if (s && Array.isArray(s.notes) && s.notes.length){
+    state.notes = s.notes.map(b => ({
+      id: b.id || state.nbIdSeq++, mode: b.mode || 'text',
+      text: b.text || '', strokes: b.strokes || [], tool: b.tool || 'pen'
+    }));
+    state.nbIdSeq = Math.max(state.nbIdSeq, ...state.notes.map(b => b.id || 0)) + 1;
+  } else {
+    state.notes = [newNoteBlock()];
+  }
+  state.notesOpen = false;
+}
+function noteBlockById(id){ return state.notes.find(b => b.id === id); }
+function noteHasContent(b){
+  if (b.mode === 'text') return (b.text || '').trim().length > 0;
+  return (b.strokes || []).length > 0;
+}
+
+function renderNotes(){
+  const zone = $('#notesZone');
+  if (!zone) return;
+  zone.innerHTML = ''
+  + '<div class="noteboard">'
+  +   '<div class="nb-head">'
+  +     '<button class="nb-tbtn" id="nbToggle">📝 记录板 <span id="nbCount">' + state.notes.length + '/' + NB_MAX + '</span></button>'
+  +     '<span class="tiny">默认不保存，离开会话即清空</span>'
+  +   '</div>'
+  +   '<div class="nb-body hide" id="nbBody">'
+  +     '<div id="nbBlocks"></div>'
+  +     '<div class="nb-add"><button class="btn" id="nbAdd">＋ 新增板块</button></div>'
+  +     '<div class="nb-foot">'
+  +       '<span class="tiny">保存才存入浏览器；导出会跳过空白板块</span>'
+  +       '<button class="btn" id="nbSave">保存</button>'
+  +       '<button class="btn" id="nbPng">导出 PNG</button>'
+  +       '<button class="btn" id="nbPdf">导出 PDF</button>'
+  +     '</div>'
+  +   '</div>'
+  + '</div>';
+  const tg = $('#nbToggle');
+  if (tg) tg.addEventListener('click', () => {
+    state.notesOpen = !state.notesOpen;
+    $('#nbBody').classList.toggle('hide', !state.notesOpen);
+  });
+  const add = $('#nbAdd');
+  if (add) add.addEventListener('click', addNoteBlock);
+  $('#nbSave').addEventListener('click', saveNotes);
+  $('#nbPng').addEventListener('click', exportNotesPNG);
+  $('#nbPdf').addEventListener('click', printNotes);
+  renderNotesBlocks();
+}
+
+function renderNotesBlocks(){
+  const c = $('#nbBlocks');
+  if (!c) return;
+  c.innerHTML = state.notes.map(b => noteBlockHtml(b)).join('');
+  state.notes.forEach(b => bindNoteBlock(b));
+  const add = $('#nbAdd');
+  if (add) add.disabled = state.notes.length >= NB_MAX;
+  const cnt = $('#nbCount');
+  if (cnt) cnt.textContent = state.notes.length + '/' + NB_MAX;
+}
+
+function noteBlockHtml(b){
+  const isText = b.mode === 'text';
+  return ''
+  + '<div class="nb-block" data-nbid="' + b.id + '">'
+  +   '<div class="nb-btools">'
+  +     '<div class="nb-mode">'
+  +       '<button data-mode="text" class="' + (isText ? 'on' : '') + '">打字</button>'
+  +       '<button data-mode="draw" class="' + (isText ? '' : 'on') + '">手写</button>'
+  +     '</div>'
+  +     (isText ? '' : '<button class="nb-tbtn" data-act="undo" ' + (b.strokes.length ? '' : 'disabled') + '>↶ 撤回</button>'
+                  + '<button class="nb-tbtn ' + (b.tool === 'eraser' ? 'on' : '') + '" data-act="eraser">' + (b.tool === 'eraser' ? '橡皮擦(开)' : '橡皮擦') + '</button>'
+                  + '<button class="nb-tbtn" data-act="clear">清空</button>')
+  +     '<span class="spacer"></span>'
+  +     '<button class="nb-del" data-act="del">删除板块</button>'
+  +   '</div>'
+  +   (isText
+        ? '<textarea class="nb-text" placeholder="随手记点什么…（不会自动保存）">' + esc(b.text) + '</textarea>'
+        : '<canvas class="nb-canvas ' + (b.tool === 'eraser' ? 'eraser' : '') + '"></canvas>')
+  + '</div>';
+}
+
+function bindNoteBlock(b){
+  const el = $('.nb-block[data-nbid="' + b.id + '"]');
+  if (!el) return;
+  el.querySelectorAll('.nb-mode button').forEach(btn => {
+    btn.addEventListener('click', () => setNoteMode(b.id, btn.dataset.mode));
+  });
+  el.querySelectorAll('[data-act]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.act;
+      if (act === 'del') removeNoteBlock(b.id);
+      else if (act === 'undo') undoNote(b.id);
+      else if (act === 'clear') clearNote(b.id);
+      else if (act === 'eraser'){ b.tool = (b.tool === 'eraser' ? 'pen' : 'eraser'); renderNotesBlocks(); }
+    });
+  });
+  const tx = el.querySelector('.nb-text');
+  if (tx) tx.addEventListener('input', () => { b.text = tx.value; });
+  const cv = el.querySelector('.nb-canvas');
+  if (cv){ setupNoteCanvas(cv, b); drawNoteBlock(b); }
+}
+
+function setNoteMode(id, mode){
+  const b = noteBlockById(id); if (!b || b.mode === mode) return;
+  b.mode = mode;
+  renderNotesBlocks();
+}
+function addNoteBlock(){
+  if (state.notes.length >= NB_MAX){ toast('最多 ' + NB_MAX + ' 个板块'); return; }
+  state.notes.push(newNoteBlock());
+  renderNotesBlocks();
+}
+function removeNoteBlock(id){
+  state.notes = state.notes.filter(b => b.id !== id);
+  if (!state.notes.length) state.notes.push(newNoteBlock());
+  renderNotesBlocks();
+}
+function undoNote(id){
+  const b = noteBlockById(id); if (!b || !b.strokes.length) return;
+  b.strokes.pop();
+  drawNoteBlock(b);
+  renderNotesBlocks();
+}
+function clearNote(id){
+  const b = noteBlockById(id); if (!b) return;
+  b.strokes = [];
+  drawNoteBlock(b);
+  renderNotesBlocks();
+}
+
+function setupNoteCanvas(canvas, b){
+  const dpr = window.devicePixelRatio || 1;
+  const fit = () => {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = Math.max(1, Math.floor(w * dpr));
+    canvas.height = Math.max(1, Math.floor(h * dpr));
+    drawNoteBlock(b);
+  };
+  fit();
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(canvas);
+
+  let drawing = false, current = null;
+  const getPt = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { canvas.setPointerCapture(e.pointerId); } catch(_){}
+    const p = getPt(e);
+    if (b.tool === 'eraser'){
+      const radius = 18;
+      b.strokes = b.strokes.filter(str => !str.points.some(pt => Math.hypot(pt.x - p.x, pt.y - p.y) <= radius));
+      drawNoteBlock(b);
+      renderNotesBlocks();
+      return;
+    }
+    drawing = true;
+    current = { points: [p] };
+    b.strokes.push(current);
+    drawNoteBlock(b);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    e.preventDefault();
+    current.points.push(getPt(e));
+    drawNoteBlock(b);
+  });
+  const end = () => { if (!drawing) return; drawing = false; current = null; renderNotesBlocks(); };
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointercancel', end);
+  canvas.addEventListener('pointerleave', end);
+}
+
+function drawNoteBlock(b){
+  const cv = $('.nb-block[data-nbid="' + b.id + '"] .nb-canvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  if (!ctx) return;
+  const dpr = window.devicePixelRatio || 1;
+  ctx.save();
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.scale(dpr, dpr);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = '#111';
+  ctx.fillStyle = '#111';
+  b.strokes.forEach(str => {
+    if (str.points.length < 2){
+      const p = str.points[0];
+      ctx.beginPath(); ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2); ctx.fill();
+      return;
+    }
+    ctx.beginPath();
+    ctx.moveTo(str.points[0].x, str.points[0].y);
+    for (let i = 1; i < str.points.length; i++) ctx.lineTo(str.points[i].x, str.points[i].y);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+async function saveNotes(){
+  if (!state.session) return;
+  state.session.notes = JSON.parse(JSON.stringify(state.notes));
+  await DB.put(state.session);
+  state.history = await DB.all();
+  toast('已保存到本会话');
+}
+
+function exportNotesPNG(){
+  const blocks = state.notes.filter(noteHasContent);
+  if (!blocks.length){ toast('没有可导出的内容'); return; }
+  const pad = 16, bw = 760, lineH = 26, padY = 16;
+  const items = blocks.map(b => {
+    if (b.mode === 'text'){
+      const lines = wrapText(b.text, bw - pad * 2, '16px sans-serif');
+      return { block: b, h: padY * 2 + Math.max(1, lines.length) * lineH, lines };
+    } else {
+      const bb = bbox(b.strokes);
+      const sw = bb.maxX - bb.minX, sh = bb.maxY - bb.minY;
+      const scale = sw > (bw - pad * 2) ? (bw - pad * 2) / sw : 1;
+      const dh = Math.max(90, sh * scale + padY * 2);
+      return { block: b, h: dh, scale, ox: -bb.minX, oy: -bb.minY };
+    }
+  });
+  const gap = 12;
+  const totalH = items.reduce((a, it) => a + it.h, 0) + gap * (items.length - 1) + padY * 2;
+  const cv = document.createElement('canvas');
+  cv.width = bw; cv.height = Math.ceil(totalH);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  let y = padY;
+  items.forEach(it => {
+    ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, y + 0.5, bw - 1, it.h - 1);
+    if (it.block.mode === 'text'){
+      ctx.fillStyle = '#111'; ctx.font = '16px sans-serif'; ctx.textBaseline = 'top';
+      it.lines.forEach((ln, j) => ctx.fillText(ln, pad, y + padY + j * lineH));
+    } else {
+      ctx.save();
+      ctx.translate(pad, y + padY);
+      ctx.scale(it.scale, it.scale);
+      ctx.translate(it.ox, it.oy);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.2; ctx.strokeStyle = '#111'; ctx.fillStyle = '#111';
+      it.block.strokes.forEach(str => {
+        if (str.points.length < 2){ const p = str.points[0]; ctx.beginPath(); ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2); ctx.fill(); return; }
+        ctx.beginPath(); ctx.moveTo(str.points[0].x, str.points[0].y);
+        for (let k = 1; k < str.points.length; k++) ctx.lineTo(str.points[k].x, str.points[k].y);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+    y += it.h + gap;
+  });
+  cv.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'learnwords-notes-' + (state.session && state.session.date || '') + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('已导出 PNG');
+  }, 'image/png');
+}
+
+function bbox(strokes){
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  strokes.forEach(str => str.points.forEach(p => {
+    minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+  }));
+  if (!isFinite(minX)){ minX = 0; minY = 0; maxX = 0; maxY = 0; }
+  return { minX, minY, maxX, maxY };
+}
+function wrapText(text, maxWidth, font){
+  const cv = document.createElement('canvas');
+  const ctx = cv.getContext('2d');
+  ctx.font = font;
+  const out = [];
+  String(text).split('\n').forEach(para => {
+    if (!para){ out.push(''); return; }
+    let line = '';
+    for (const ch of para){
+      const test = line + ch;
+      if (ctx.measureText(test).width > maxWidth && line){ out.push(line); line = ch; }
+      else line = test;
+    }
+    if (line) out.push(line);
+  });
+  return out;
+}
+
+function printNotes(){
+  const blocks = state.notes.filter(noteHasContent);
+  const pa = $('#printarea');
+  if (!blocks.length){ toast('没有可导出的内容'); return; }
+  const s = state.session;
+  pa.innerHTML = ''
+    + '<h2 style="font-size:20px;margin:0 0 6px">' + esc(s && s.title || '笔记') + '</h2>'
+    + '<p style="color:#666;font-size:13px;margin:0 0 16px">' + (s && s.date || '') + '</p>'
+    + blocks.map(b => {
+        if (b.mode === 'text'){
+          return '<div style="border:1px solid #000;padding:14px 16px;margin-bottom:12px;white-space:pre-wrap;font-size:16px;line-height:1.7;background:#fff">' + esc(b.text) + '</div>';
+        }
+        const cv = document.createElement('canvas');
+        const bb = bbox(b.strokes);
+        const pad = 16;
+        cv.width = Math.max(200, (bb.maxX - bb.minX) + pad * 2);
+        cv.height = Math.max(80, (bb.maxY - bb.minY) + pad * 2);
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.translate(pad - bb.minX, pad - bb.minY);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.2; ctx.strokeStyle = '#111'; ctx.fillStyle = '#111';
+        b.strokes.forEach(str => {
+          if (str.points.length < 2){ const p = str.points[0]; ctx.beginPath(); ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2); ctx.fill(); return; }
+          ctx.beginPath(); ctx.moveTo(str.points[0].x, str.points[0].y);
+          for (let k = 1; k < str.points.length; k++) ctx.lineTo(str.points[k].x, str.points[k].y);
+          ctx.stroke();
+        });
+        return '<div style="border:1px solid #000;margin-bottom:12px;background:#fff"><img src="' + cv.toDataURL('image/png') + '" style="display:block;width:100%"></div>';
+      }).join('');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { pa.innerHTML = ''; }, 800);
+  }, 120);
 }
 
 async function togglePlay(){
@@ -1930,7 +2301,7 @@ async function renderSettings(){
   +   '<input type="password" id="keyInput" placeholder="AIza…" value="' + esc(settings.apiKey) + '">'
   +   '<label class="f">模型</label>'
   +   '<input type="text" id="modelInput" value="' + esc(settings.model) + '">'
-  +   '<p class="tiny">模型名以 AI Studio 页面上显示的为准，默认 gemini-2.5-flash。</p>'
+  +   '<p class="tiny">模型名以 AI Studio 页面上显示的为准，默认 gemini-3.8-flash。</p>'
   +   '<div class="row" style="margin-top:12px">'
   +     '<button class="btn primary" id="saveKey">保存</button>'
   +     '<button class="btn" id="testKey">测试连接</button>'
