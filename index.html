@@ -219,14 +219,19 @@ textarea{resize:vertical;min-height:110px;font-family:ui-monospace,"SF Mono",Men
 .wnoteBtn{border:0;background:none;color:var(--muted);font-size:12px;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .wnoteArea{width:100%;margin-top:6px;font:inherit;font-size:13px;line-height:1.5;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);resize:vertical;box-sizing:border-box}
 .prow{display:flex;gap:8px;align-items:center;margin-top:6px}
-.pterm,.pzh{flex:1;min-width:0;font:inherit;font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-.pzh{flex:.85}
+.pterm,.pzh,.preading{flex:1;min-width:0;font:inherit;font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.pzh{flex:.85}.preading{flex:.8}
 
 .listitem{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:12px;align-items:flex-start}
 .listitem:first-child{border-top:0}
 .listitem .meta{flex:1;min-width:0}
 .listitem .ttl{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .listitem .sub{font-size:12.5px;color:var(--muted)}
+.listitem .acts{display:flex;gap:4px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+.listitem .acts .btn{padding:5px 8px}
+@media (max-width:520px){
+  .listitem .acts{justify-content:flex-start}
+}
 
 .banner{
   background:var(--brand-soft);border:1px solid color-mix(in srgb,var(--brand) 30%,transparent);
@@ -326,6 +331,20 @@ details[open] summary{margin-bottom:8px}
   .wterm{min-width:78px}
   h1{font-size:20px}
 }
+.nb-resize{height:18px;display:flex;align-items:center;justify-content:center;cursor:ns-resize;background:var(--soft);border-top:1px solid var(--line);color:var(--muted);font-size:11px;user-select:none;touch-action:none}
+.nb-resize::before{content:"";width:34px;height:3px;border-radius:2px;background:var(--line)}
+.nb-fs{position:fixed;inset:0;z-index:90;background:#fff;display:flex;flex-direction:column}
+.nb-fsbar{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--soft);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.nb-fsbar .spacer{flex:1}
+.nb-fsbar .tiny{color:var(--muted)}
+#nbFsCanvas{display:block;width:100%;flex:1;min-height:0;background:#fff;touch-action:none}
+.tocFab{position:fixed;right:14px;bottom:18px;z-index:45;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 14px;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.12);cursor:pointer}
+.tocPanel{position:fixed;right:14px;top:calc(var(--headerH,56px) + 14px);z-index:46;width:228px;max-height:60vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.16)}
+.tocPanel h4{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.tocPanel a{display:block;padding:7px 6px;border-radius:8px;font-size:13px;color:var(--ink);text-decoration:none}
+.tocPanel a:hover{background:var(--soft)}
+.card[id]{scroll-margin-top:calc(var(--headerH,56px) + 12px)}
+@media (max-width:520px){.tocPanel{width:calc(100vw - 28px)}}
 @media print{
   body *{visibility:hidden}
   .printarea,.printarea *{visibility:visible}
@@ -383,11 +402,11 @@ const DEFAULT_SETTINGS = {
   apiKey: '', model: 'gemini-3.5-flash-lite',
   lang: 'en', level: 'auto', newCount: 10, poolOn: true,
   ttsMode: 'cloud', rate: 0.95, rateRead: 0.95, voicePref: {},
-  germanTipHidden: false, pipeTipHidden: false,
+  germanTipHidden: false, jaTipHidden: false, pipeTipHidden: false,
   theme: 'auto', reviewOff: false, reviewBaseline: '',
   spotMode: 'current', spotTotal: 10, spotMaxByLang: {},
   firstUse: '',
-  onboarded: false, retellOnboarded: false, cloudWarned: false
+  onboarded: false, retellOnboarded: false, cloudWarned: false, tipsSeen: false
 };
 let settings = Object.assign({}, DEFAULT_SETTINGS);
 function loadSettings(){
@@ -635,68 +654,68 @@ const STORAGE_MODE = {
 };
 
 /* ============================ 词表解析 ============================ */
-const ARTICLE_WORDS = new Set(['der','die','das','des','dem','den','le','la','les','un','une','el','los','las','il','lo','gli','the','a','an']);
-const isHan = s => /^[\u3400-\u9fff]+$/.test(s);
 const stripBullet = t => String(t || '').replace(/^\d+[.、)\]]\s*/, '').replace(/^[\-*•·]\s*/, '').trim();
+const kanaNorm = s => String(s || '').replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).toLowerCase();
+function parseJaTerm(raw){
+  const src = String(raw || '').trim();
+  if (settings.lang !== 'ja' || !src.includes('/')) return { term: src, reading: '' };
+  const parts = src.split('/').map(s => s.trim()).filter(Boolean);
+  if (parts.length !== 2) return { term: src, reading: '' };
+  const kana = parts.find(p => /^[\u3040-\u30ffー]+$/.test(p));
+  const kanji = parts.find(p => /[\u3400-\u9fff]/.test(p));
+  return { term: kanji || parts[0], reading: kana || parts[1] };
+}
+// 规则：每行默认一条；空行忽略；分号永远分隔；没有「｜」时逗号/顿号才分隔；空格永远不拆词。
 function parseWords(raw){
-  const segs = String(raw || '').split(/\r?\n|[,，;；、]+/).map(s => s.trim()).filter(Boolean);
   const out = [];
-  const push = (term, hint) => {
+  const push = (term, hint, reading) => {
     term = String(term || '').replace(/\s+/g, ' ').trim();
     if (!term || out.length >= 10) return;
-    out.push({ term, zhHint: String(hint || '').replace(/\s+/g, ' ').trim() });
+    const ja = parseJaTerm(term);
+    out.push({
+      term: ja.term,
+      reading: String(reading || ja.reading || '').trim(),
+      zhHint: String(hint || '').replace(/\s+/g, ' ').trim(),
+      type: /\s/.test(ja.term) ? 'phrase' : 'word'
+    });
   };
-  const pushTermTokens = toks => {
-    const clean = toks.map(stripBullet).filter(t => t && !/^\d+[.、)\]]?$/.test(t));
-    if (!clean.length) return;
-    const units = [];
-    for (let k = 0; k < clean.length; k++){
-      if (settings.lang === 'de' && ARTICLE_WORDS.has(clean[k].toLowerCase()) && k + 1 < clean.length){
-        units.push(clean[k] + ' ' + clean[k + 1]); k++;
-      } else units.push(clean[k]);
-    }
-    units.forEach(t => push(t, ''));
-  };
-  for (const seg of segs){
-    const t0 = stripBullet(seg);
-    if (!t0) continue;
-    const toks = t0.split(/\s+/).filter(Boolean);
-    if (!toks.some(t => /[|｜]/.test(t))){
-      const m = t0.match(/^([^\u3400-\u9fff]+?)\s*([\u3400-\u9fff][\s\S]*)$/);
-      if (m && !/[|｜]/.test(t0)){ push(m[1], m[2]); continue; }
-      pushTermTokens(toks);
-      continue;
-    }
-    let i = 0;
-    while (i < toks.length && out.length < 10){
-      const termToks = [];
-      while (i < toks.length && !/[|｜]/.test(toks[i])){ termToks.push(toks[i]); i++; }
-      if (i >= toks.length){ pushTermTokens(termToks); break; }
-      const parts = toks[i].split(/[|｜]/);
-      const before = parts.shift();
-      const rest = parts.join('｜');
-      if (before) termToks.push(before);
-      const term = termToks.map(stripBullet).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-      i++;
-      let j = i;
-      while (j < toks.length && !/[|｜]/.test(toks[j])) j++;
-      let hintToks;
-      if (j < toks.length){
-        let k = j - 1;
-        while (k >= i && !isHan(toks[k])) k--;
-        hintToks = toks.slice(i, k + 1);
-        i = k + 1;
-      } else {
-        hintToks = toks.slice(i);
-        i = toks.length;
+  const lines = String(raw || '').split(/\r?\n/);
+  for (const line of lines){
+    const lineText = stripBullet(line.trim());
+    if (!lineText) continue;
+    const chunks = /[;；]/.test(lineText) ? lineText.split(/[;；]+/) : [lineText];
+    for (const chunkRaw of chunks){
+      const chunk = stripBullet(chunkRaw.trim());
+      if (!chunk) continue;
+      const parts = /[|｜]/.test(chunk) ? [chunk] : chunk.split(/[,，、]+/);
+      for (const partRaw of parts){
+        const part = stripBullet(partRaw.trim());
+        if (!part) continue;
+        let term = part, hint = '';
+        const pipe = part.search(/[|｜]/);
+        if (pipe >= 0){
+          term = part.slice(0, pipe).trim();
+          hint = part.slice(pipe + 1).trim();
+        } else {
+          const m = /[|｜]/.test(part) ? null : part.match(/^(.+)\s+([\u3400-\u9fff][\s\S]*)$/);
+          if (m){ term = m[1].trim(); hint = m[2].trim(); }
+        }
+        if (term) push(term, hint);
       }
-      push(term, [rest].concat(hintToks).join(' '));
     }
   }
   return out.slice(0, 10);
 }
 const ARTICLES = /^(der|die|das|den|dem|des|le|la|les|el|los|las|il|lo|gli|un|une|uno|una)\s+/i;
 function bare(term){ return String(term || '').replace(ARTICLES, '').trim().toLowerCase(); }
+function wordMatches(w, q){
+  q = String(q || '').trim().toLowerCase();
+  if (!q) return true;
+  const fields = [w.term, w.reading, w.surface, w.zh, w.pos, w.note, w.collocation, w.extra]
+    .map(v => String(v || '').toLowerCase());
+  if (fields.some(f => f.includes(q))) return true;
+  return /[\u3040-\u30ff]/.test(q) && fields.some(f => kanaNorm(f).includes(kanaNorm(q)));
+}
 
 /* ============================ 生词池 ============================ */
 async function loadPool(lang){
@@ -721,20 +740,34 @@ async function loadPool(lang){
 // 艾宾浩斯间隔 [1,2,4,7,15,30] 的累计天数：第 1/3/7/14/29/59 天回听
 const REVIEW_GAPS = [1, 3, 7, 14, 29, 59];
 const REVIEW_MAX = 7;
-function dueSessions(sessions){
+function dueSessions(sessions, date){
   if (settings.reviewOff) return [];
-  const today = todayStr();
+  const target = date || todayStr();
   const base = settings.reviewBaseline || '';
   const out = [];
   sessions.forEach(s => {
     if (base && s.date < base) return;
-    const d = dayDiff(s.date, today);
+    const d = dayDiff(s.date, target);
     if (REVIEW_GAPS.includes(d) && (s.done && s.done.read) && !(s.reviewed || []).includes(d)){
       out.push({ session: s, gap: d });
     }
   });
   out.sort((a, b) => a.gap - b.gap || String(a.session.date).localeCompare(String(b.session.date)));
   return out.slice(0, REVIEW_MAX);
+}
+function reviewedSessions(sessions, date){
+  if (settings.reviewOff) return [];
+  const target = date || todayStr();
+  const base = settings.reviewBaseline || '';
+  const out = [];
+  sessions.forEach(s => {
+    if (base && s.date < base) return;
+    if (!(s.done && s.done.read)) return;
+    const d = dayDiff(s.date, target);
+    if (REVIEW_GAPS.includes(d) && (s.reviewed || []).includes(d)) out.push({ session: s, gap: d });
+  });
+  out.sort((a, b) => a.gap - b.gap || String(a.session.date).localeCompare(String(b.session.date)));
+  return out;
 }
 
 /* ============================ Prompt ============================ */
@@ -744,7 +777,11 @@ function buildPrompt(words, lang, level){
   const lenText = lang === 'ja'
     ? (n * 20) + '–' + (n * 30) + ' 个字符'
     : (n * 7) + '–' + (n * 10) + ' 个单词';
-  const list = words.map(w => w.zhHint ? '- ' + w.term + '（' + w.zhHint + '）' : '- ' + w.term).join('\n');
+  const list = words.map(w => {
+    const read = w.reading ? '（读音：' + w.reading + '）' : '';
+    const type = w.type === 'phrase' ? '〔短语〕' : '';
+    return '- ' + w.term + read + type + (w.zhHint ? '｜' + w.zhHint : '');
+  }).join('\n');
   const rules = {
     en: '英语：自然、口语化的书面表达；句子简短；避免生僻词和抽象议论。',
     de: '德语：名词首字母必须大写；冠词、格、动词变位必须正确；A1–A2 每句不超过 12 个词；可分动词要正确拆分。',
@@ -759,13 +796,15 @@ function buildPrompt(words, lang, level){
     + '1. 每个目标词至少出现一次，并自然融入语境，不要生硬堆砌。\n'
     + '2. 句子之间要有清楚的逻辑衔接（时间、因果、转折），整体是一个有画面感的小场景，便于听后复述。\n'
     + '3. 语法必须正确，母语者读起来自然。\n'
-    + '4. 为每个句子提供：starter（该句开头的 3–4 个词）、keywords（该句的目标词或关键词）、verb（该句主要动词原形）。\n'
+    + '4. 为每个句子提供：text（完整原文句子）、starter（该句开头的 3–4 个词）、keywords（该句的目标词或关键词）、verb（该句主要动词原形）。text 必须是有主语、谓语和必要成分的完整句子，并以句末标点结束；starter 只是句首提示，绝对不能代替 text，也不能只写句首片段。\n'
     + '5. words 中给出每个目标词：term（原型）、surface（它在文中实际出现的那个词形，没有变化就与原型相同）、pos（词性）、zh（中文）、extra（形态说明：英语给不规则复数/过去式；德语名词给冠词和复数、动词给三时、形容词给比较级最高级；日语给词性与活用）、sentence（所在句子的序号，从 0 开始）、collocation（固定搭配及其中文，没有则空字符串）。\n'
     + '6. 目标词一律优先使用它最常见、最基础的义项（例如 harp 首选名词「竖琴」，不要用动词「反复唠叨」）；只有当括号里的中文提示明确指向另一义项时才例外。\n'
-    + '7. 若某个词在文中以固定搭配/习语出现（如 harp on、come across、take after），在 collocation 里写成「搭配 + 中文」，例如 "harp on（反复唠叨某事）"；不确定是否固定搭配就留空字符串，不要编造。\n\n'
+    + '7. 若某个词在文中以固定搭配/习语出现（如 harp on、come across、take after），在 collocation 里写成「搭配 + 中文」，例如 "harp on（反复唠叨某事）"；不确定是否固定搭配就留空字符串，不要编造。\n'
+    + '8. 短语目标：凡是带〔短语〕标记、或本身包含空格/固定搭配的目标，必须作为整体处理，type 填 "phrase"，term 写完整短语，绝不能拆成几个单词分别返回；短文必须自然使用这个完整短语。德语可分动词允许在文中拆开（如 nimmt … in Anspruch），但 term 仍写完整原形；日语固定搭配也整体处理。\n'
+    + '9. 日语必须在 reading 字段给平假名读音：若目标写成「汉字/假名」或已给读音，term 用汉字部分、reading 用假名部分，不得自行改写；本身是假名则两者相同。其他语言 reading 留空字符串。\n\n'
     + '目标词：\n' + list + '\n\n'
     + '只输出一个 JSON 对象，不要 markdown 代码块，不要任何解释文字。格式：\n'
-    + '{"level":"A2","levelReason":"一句话理由","title":"短标题","sentences":[{"text":"原文","zh":"中文翻译","starter":"句首3-4词","keywords":["词"],"verb":"动词"}],"words":[{"term":"原型","surface":"文中词形","pos":"词性","zh":"中文","extra":"形态说明","collocation":"固定搭配及中文，没有则空字符串","sentence":0}]}';
+    + '{"level":"A2","levelReason":"一句话理由","title":"短标题","sentences":[{"text":"原文","zh":"中文翻译","starter":"句首3-4词","keywords":["词"],"verb":"动词"}],"words":[{"term":"原型或完整短语","surface":"文中词形","reading":"日语平假名，其他语言为空","type":"word 或 phrase","pos":"词性","zh":"中文","extra":"形态说明","collocation":"固定搭配及中文，没有则空字符串","sentence":0}]}';
 }
 
 /* ============================ AI 调用（Gemini） ============================ */
@@ -824,15 +863,48 @@ function extractJson(text){
   catch (e){ throw { kind: 'badjson', detail: e.message }; }
 }
 
-async function generateSession(newWords, level, lang){
-  const prompt = buildPrompt(newWords, lang, level);
+function sentenceIssues(sentences, lang){
+  const issues = [];
+  const plain = t => String(t || '').replace(/\s+/g, ' ').trim().replace(/[.!?…。！？」』"”]+$/g, '').trim();
+  (sentences || []).forEach((s, i) => {
+    const text = String(s.text || '').trim();
+    const starter = String(s.starter || '').trim();
+    if (!text){ issues.push('第 ' + (i + 1) + ' 句为空'); return; }
+    const endOk = lang === 'ja' ? /[。！？!?…」』]$/.test(text) : /[.!?…"”』]$/.test(text);
+    if (!endOk){ issues.push('第 ' + (i + 1) + ' 句句末没有标点'); return; }
+    if (starter && plain(text) === plain(starter)){ issues.push('第 ' + (i + 1) + ' 句只有句首'); return; }
+    if (starter && plain(text).length <= plain(starter).length){ issues.push('第 ' + (i + 1) + ' 句比句首还短'); return; }
+  });
+  return issues;
+}
+
+async function requestSession(newWords, level, lang, repairDetail){
+  const prompt = buildPrompt(newWords, lang, level)
+    + (repairDetail
+      ? '\n\n注意：上一次输出不合格：' + repairDetail + '。请重新输出完整 JSON。text 必须是完整句子并带句末标点，starter 只能单独放在 starter 字段，绝不能拿句首片段代替 text。'
+      : '');
   const cand = await callGemini(
     [{ text: prompt }],
-    { temperature: 0.85, responseMimeType: 'application/json' }
+    { temperature: 0.85, responseMimeType: 'application/json', maxOutputTokens: 4096 }
   );
   const raw = (cand.content && cand.content.parts || []).map(p => p.text || '').join('');
   const json = extractJson(raw);
-  return normalizeSession(json, newWords, lang, level);
+  const session = normalizeSession(json, newWords, lang, level);
+  const issues = sentenceIssues(session.sentences, lang);
+  if (issues.length) throw { kind: 'incomplete', detail: issues.slice(0, 3).join('；') };
+  return session;
+}
+
+async function generateSession(newWords, level, lang){
+  try {
+    return await requestSession(newWords, level, lang, '');
+  } catch(e){
+    if (e && (e.kind === 'incomplete' || e.kind === 'truncated')){
+      toast('这次句子不完整，正在自动重写一次…');
+      return await requestSession(newWords, level, lang, e.detail || '句子不完整');
+    }
+    throw e;
+  }
 }
 
 function normalizeSession(json, newWords, lang, level){
@@ -848,6 +920,8 @@ function normalizeSession(json, newWords, lang, level){
   const words = (json.words || []).map(w => ({
     term: String(w.term || '').trim(),
     surface: String(w.surface || w.term || '').trim(),
+    reading: String(w.reading || '').trim(),
+    type: (w.type === 'phrase' || /\s/.test(String(w.term || '').trim())) ? 'phrase' : 'word',
     pos: String(w.pos || '').trim(),
     zh: String(w.zh || '').trim(),
     extra: String(w.extra || '').trim(),
@@ -857,13 +931,21 @@ function normalizeSession(json, newWords, lang, level){
     mark: null, isNew: true
   })).filter(w => w.term);
 
+  const normTerm = v => bare(v).replace(/\s+/g, ' ');
   newWords.forEach(nw => {
-    const hit = words.find(w => bare(w.term) === bare(nw.term) || bare(w.surface) === bare(nw.term));
+    const hit = words.find(w => normTerm(w.term) === normTerm(nw.term) || normTerm(w.surface) === normTerm(nw.term));
     if (hit){
       hit.isNew = true;
+      if (nw.reading) hit.reading = nw.reading;
+      if (nw.type === 'phrase') hit.type = 'phrase';
       if (!hit.zh && nw.zhHint) hit.zh = nw.zhHint;
     } else {
-      words.push({ term: nw.term, surface: nw.term, pos: '', zh: nw.zhHint || '', extra: '', sentence: 0, mark: null, isNew: true });
+      words.push({
+        term: nw.term, surface: nw.term, reading: nw.reading || '',
+        type: nw.type === 'phrase' ? 'phrase' : 'word',
+        pos: '', zh: nw.zhHint || '', extra: '', collocation: '',
+        note: '', sentence: 0, mark: null, isNew: true
+      });
     }
   });
 
@@ -942,6 +1024,13 @@ function showApiError(e, retry){
       b: '<p>模型输出太长没写完。把词减到 5–8 个再试一次。</p>',
       a: [retryBtn]
     };
+  } else if (e.kind === 'incomplete'){
+    m = {
+      t: '这次生成的句子不完整',
+      b: '<p>模型把句首提示当成了整句，自动重写一次后仍然不合格。</p><p class="small">建议再点一次重试，或把词减到 5–8 个。生成失败不会保存残缺文章。</p>'
+        + (e.detail ? '<p class="tiny">具体问题：' + esc(e.detail) + '</p>' : ''),
+      a: [retryBtn]
+    };
   } else if (e.kind === 'badjson'){
     m = {
       t: '模型返回的格式不对',
@@ -976,6 +1065,29 @@ function voiceScore(v, langKey){
   if (/google/i.test(v.name || '')) sc += 20;
   if ((v.lang || '').toLowerCase().replace('_', '-') === LANGS[langKey].tts.toLowerCase()) sc += 10;
   return sc;
+}
+function deviceInfo(){
+  const ua = navigator.userAgent || '';
+  const ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && Number(navigator.maxTouchPoints) > 1);
+  const android = /Android/i.test(ua);
+  const mac = !ios && /Macintosh|Mac OS X/i.test(ua);
+  const win = /Windows/i.test(ua);
+  const browser = /Edg\//.test(ua) ? 'Edge'
+    : /Chrome\//.test(ua) && !/OPR\//.test(ua) ? 'Chrome'
+    : /Firefox\//.test(ua) ? 'Firefox'
+    : /Safari\//.test(ua) ? 'Safari' : '浏览器';
+  const name = android ? 'Android 手机/平板' : ios ? 'iPhone / iPad' : mac ? 'macOS 电脑' : win ? 'Windows 电脑' : '其他设备';
+  const voiceHint = android
+    ? '设置 → 系统 → 语言和输入 → 文字转语音输出 → Google 语音服务 → 安装语音数据'
+    : ios
+      ? '设置 → 辅助功能 → 朗读内容 → 声音 → 下载语音'
+      : mac
+        ? '系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音'
+        : win
+          ? '设置 → 时间和语言 → 语音 → 添加语音'
+          : '在系统设置里找到「文字转语音 / 语音」并安装对应语言';
+  const storageHint = ios ? 'iOS 的浏览器可能在长期不用后清理网站数据，建议定期导出备份。' : '';
+  return { ios, android, mac, win, browser, name, voiceHint, storageHint };
 }
 function pickVoice(langKey){
   const list = voicesFor(langKey);
@@ -1236,7 +1348,7 @@ const state = {
   readOnly: false, reviewGap: null,
   readWordFilter: '',
   history: [], due: [],
-  notes: [], notesOpen: false, nbIdSeq: 1
+  notes: [], notesOpen: false, nbIdSeq: 1, noteFullId: null
 };
 
 /* ============================ 今日页渲染 ============================ */
@@ -1290,6 +1402,15 @@ function setupHtml(){
   +     '<button class="btn lg" id="demoBtn">先用演示数据看流程</button>'
   +   '</div>'
   + '</div>'
+  + (settings.tipsSeen ? '' :
+    '<div class="card tight" id="usageTips">'
+    +   '<div class="row" style="justify-content:space-between;align-items:center">'
+    +     '<b class="small">第一次用？两件事先知道</b>'
+    +     '<button class="btn small ghost" id="tipsClose">知道了</button>'
+    +   '</div>'
+    +   '<p class="small" style="margin:8px 0 4px"><b>看历史</b>：所有背过的文章都按日期存在这里。点日历上的某一天可以筛选记录，每篇都能「回听」「打开」或只清掉音频缓存。</p>'
+    +   '<p class="small" style="margin:4px 0 0"><b>随机抽查</b>：完成今天的听读后，可以从今天或整个词库里随机抽 10 个词自测；翻面看答案后再标记记住与否，结果会留档。</p>'
+    + '</div>')
   + '<div class="card tight">'
   +   '<div class="tiny">' + (geminiKeyOk() ? '已配置 Google 密钥 · 模型 ' + esc(settings.model) : '还没配置密钥。点「生成短文」会提示你去拿一个免费的（2 分钟）。') + '</div>'
   + '</div>';
@@ -1298,8 +1419,12 @@ function setupHtml(){
 function currentWords(){
   const rev = state.draft.review;
   if (rev && rev.length){
-    return rev.map(w => ({ term: String(w.term || '').trim(), zhHint: String(w.zhHint || '').trim() }))
-      .filter(w => w.term).slice(0, 10);
+    return rev.map(w => ({
+      term: String(w.term || '').trim(),
+      reading: String(w.reading || '').trim(),
+      type: w.type === 'phrase' ? 'phrase' : 'word',
+      zhHint: String(w.zhHint || '').trim()
+    })).filter(w => w.term).slice(0, 10);
   }
   return parseWords($('#wordInput') ? $('#wordInput').value : '');
 }
@@ -1310,7 +1435,7 @@ function updateWordCount(){
   const n = parseWords(ta.value).length;
   const lines = String(ta.value).split(/\r?\n/).map(s => s.trim()).filter(Boolean).length;
   const el = $('#wordCount');
-  if (el) el.textContent = n + ' / 10' + (lines > 10 ? '（只取前 10 个）' : '');
+  if (el) el.textContent = n + ' / 10 条' + (lines > 10 ? '（只取前 10 条）' : '');
 }
 
 function clearWordInput(){
@@ -1323,20 +1448,28 @@ function clearWordInput(){
 
 function showInputTips(lang){
   const needDe = lang === 'de' && !settings.germanTipHidden;
+  const needJa = lang === 'ja' && !settings.jaTipHidden;
   const needPipe = !settings.pipeTipHidden;
-  if (!needDe && !needPipe) return;
+  if (!needDe && !needJa && !needPipe) return;
   let body = '';
   if (needDe){
     body += '<p><b>德语输入提醒</b></p>'
-      + '<p class="small">只输入生词原型，不要夹杂词性（如 n. / v.）；可分动词原形不要加分隔符或标点。</p>'
+      + '<p class="small">只输入生词原型，不要夹杂词性（如 n. / v.）；可分动词原形不要加分隔符或标点。短语可整行输入，空格不会拆词。</p>'
       + '<label class="tiny" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="tipDeChk"> 以后不再显示这条德语提醒</label>';
   }
-  if (needPipe){
+  if (needJa){
     body += (needDe ? '<div style="border-top:1px solid var(--line);margin:12px 0"></div>' : '')
-      + '<p><b>用 ｜ 指定中文义项</b></p>'
-      + '<p class="small"><code>der Tisch｜桌子 das Handy｜手机</code> → 识别成两个词<br><code>いえ；犬｜くる おじ</code> → いえ、犬（犬 的中文：くる おじ）</p>'
-      + '<p class="small muted">｜ 只作用于它紧邻的那个词；多个词也可以用换行、逗号或分号分隔。</p>'
-      + '<label class="tiny" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="tipPipeChk"> 以后不再显示这条 ｜ 用法提示</label>';
+      + '<p><b>日语：手动写汉字/假名</b></p>'
+      + '<p class="small">请写成 <code>安い/やすい｜便宜的</code>：斜杠左边是汉字表记，右边是假名读音。程序不会自动转换，也不会猜你的读音。</p>'
+      + '<p class="tiny muted">只有一个写法时也可以只写一个；短语同样整行输入。</p>'
+      + '<label class="tiny" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="tipJaChk"> 以后不再显示这条日语提醒</label>';
+  }
+  if (needPipe){
+    body += (needDe || needJa ? '<div style="border-top:1px solid var(--line);margin:12px 0"></div>' : '')
+      + '<p><b>词条怎么写</b></p>'
+      + '<p class="small">每行默认一条，空格不会拆词，所以固定短语可以整行写：<br><code>in Anspruch nehmen｜采取</code><br><code>安い/やすい｜便宜的</code></p>'
+      + '<p class="small">分号 <code>；</code> 永远分隔；没有「｜」时，逗号或顿号才分隔：<code>apple, banana</code>。有「｜」时，逗号留在中文释义里。</p>'
+      + '<label class="tiny" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="tipPipeChk"> 以后不再显示这条输入格式提示</label>';
   }
   modal({
     title: '输入小提示',
@@ -1347,6 +1480,10 @@ function showInputTips(lang){
         if (needDe){
           const c = document.getElementById('tipDeChk');
           if (c && c.checked) settings.germanTipHidden = true;
+        }
+        if (needJa){
+          const c = document.getElementById('tipJaChk');
+          if (c && c.checked) settings.jaTipHidden = true;
         }
         if (needPipe){
           const c = document.getElementById('tipPipeChk');
@@ -1374,12 +1511,13 @@ function renderPreview(){
   }
   box.innerHTML = '<div class="card tight" style="margin-top:10px">'
     + '<div class="row" style="justify-content:space-between;align-items:center">'
-    +   '<div class="tiny">识别到 ' + list.length + ' 个词（最多 10 个）</div>'
+    +   '<div class="tiny">识别到 ' + list.length + ' 条（词或短语，最多 10 条）</div>'
     +   '<button class="btn ghost small" id="pAdd">+ 添加一个</button>'
     + '</div>'
     + '<div class="plist">' + list.map((w, i) =>
         '<div class="prow">'
-        + '<input class="pterm" data-pterm="' + i + '" value="' + esc(w.term) + '" placeholder="外文词">'
+        + '<input class="pterm" data-pterm="' + i + '" value="' + esc(w.term) + '" placeholder="' + (w.type === 'phrase' ? '完整短语' : '外文词') + '">'
+        + (state.draft.lang === 'ja' ? '<input class="preading" data-preading="' + i + '" value="' + esc(w.reading || '') + '" placeholder="假名读音">' : '')
         + '<input class="pzh" data-pzh="' + i + '" value="' + esc(w.zhHint) + '" placeholder="中文（可空）">'
         + '<button class="btn ghost small" data-pdel="' + i + '">删</button></div>'
       ).join('') + '</div>'
@@ -1389,12 +1527,20 @@ function renderPreview(){
     + '</div></div>';
   $$('[data-pterm]').forEach(el => el.addEventListener('input', () => {
     const i = Number(el.dataset.pterm);
-    if (list[i]) list[i].term = el.value;
+    if (list[i]){
+      list[i].term = el.value;
+      list[i].type = /\s/.test(el.value.trim()) ? 'phrase' : 'word';
+    }
     clearWordInput();
   }));
   $$('[data-pzh]').forEach(el => el.addEventListener('input', () => {
     const i = Number(el.dataset.pzh);
     if (list[i]) list[i].zhHint = el.value;
+    clearWordInput();
+  }));
+  $$('[data-preading]').forEach(el => el.addEventListener('input', () => {
+    const i = Number(el.dataset.preading);
+    if (list[i]) list[i].reading = el.value;
     clearWordInput();
   }));
   $$('[data-pdel]').forEach(el => el.addEventListener('click', () => {
@@ -1405,7 +1551,7 @@ function renderPreview(){
   }));
   $('#pAdd').addEventListener('click', () => {
     if (list.length >= 10){ toast('最多 10 个词'); return; }
-    list.push({ term: '', zhHint: '' });
+    list.push({ term: '', reading: '', zhHint: '', type: 'word' });
     clearWordInput();
     renderPreview();
     const inputs = $$('[data-pterm]');
@@ -1419,6 +1565,13 @@ function renderPreview(){
 function bindSetup(){
   const ab = $('#achBtn');
   if (ab) ab.addEventListener('click', showAchievement);
+  const tipsClose = $('#tipsClose');
+  if (tipsClose) tipsClose.addEventListener('click', () => {
+    settings.tipsSeen = true;
+    saveSettings();
+    const card = $('#usageTips');
+    if (card) card.remove();
+  });
   const ta = $('#wordInput');
   ta.value = state.draft.words;
   updateWordCount();
@@ -1428,12 +1581,12 @@ function bindSetup(){
     updateWordCount();
   });
   $('#previewBtn').addEventListener('click', () => {
-    const list = parseWords(ta.value).map(w => ({ term: w.term, zhHint: w.zhHint }));
-    if (!list.length){ toast('没有识别到单词'); return; }
+    const list = parseWords(ta.value).map(w => ({ term: w.term, reading: w.reading, zhHint: w.zhHint, type: w.type }));
+    if (!list.length){ toast('没有识别到词或短语'); return; }
     state.draft.review = list;
     state.draft.reviewCollapsed = false;
     renderPreview();
-    toast('已识别 ' + list.length + ' 个词，可逐行修改');
+    toast('已识别 ' + list.length + ' 条，可逐行修改');
   });
   renderPreview();
 
@@ -1786,13 +1939,14 @@ function revealBlock(k){
 /* ============================ 记录板 ============================ */
 const NB_MAX = 10;
 function newNoteBlock(){
-  return { id: state.nbIdSeq++, mode: 'text', text: '', strokes: [], tool: 'pen' };
+  return { id: state.nbIdSeq++, mode: 'text', text: '', strokes: [], tool: 'pen', height: 180 };
 }
 function loadNotes(s){
   if (s && Array.isArray(s.notes) && s.notes.length){
     state.notes = s.notes.map(b => ({
       id: b.id || state.nbIdSeq++, mode: b.mode || 'text',
-      text: b.text || '', strokes: b.strokes || [], tool: b.tool || 'pen'
+      text: b.text || '', strokes: b.strokes || [], tool: b.tool || 'pen',
+      height: Number(b.height) || 180
     }));
     state.nbIdSeq = Math.max(state.nbIdSeq, ...state.notes.map(b => b.id || 0)) + 1;
   } else {
@@ -1861,13 +2015,15 @@ function noteBlockHtml(b){
   +     '</div>'
   +     (isText ? '' : '<button class="nb-tbtn" data-act="undo" ' + (b.strokes.length ? '' : 'disabled') + '>↶ 撤回</button>'
                   + '<button class="nb-tbtn ' + (b.tool === 'eraser' ? 'on' : '') + '" data-act="eraser">' + (b.tool === 'eraser' ? '橡皮擦(开)' : '橡皮擦') + '</button>'
-                  + '<button class="nb-tbtn" data-act="clear">清空</button>')
+                  + '<button class="nb-tbtn" data-act="clear">清空</button>'
+                  + '<button class="nb-tbtn" data-act="full">全屏</button>')
   +     '<span class="spacer"></span>'
   +     '<button class="nb-del" data-act="del">删除板块</button>'
   +   '</div>'
   +   (isText
         ? '<textarea class="nb-text" placeholder="随手记点什么…（不会自动保存）">' + esc(b.text) + '</textarea>'
-        : '<canvas class="nb-canvas ' + (b.tool === 'eraser' ? 'eraser' : '') + '"></canvas>')
+        : '<canvas class="nb-canvas ' + (b.tool === 'eraser' ? 'eraser' : '') + '" style="height:' + (Number(b.height) || 180) + 'px"></canvas>'
+          + '<div class="nb-resize" data-resize title="上下拖动调整高度"></div>')
   + '</div>';
 }
 
@@ -1884,12 +2040,30 @@ function bindNoteBlock(b){
       else if (act === 'undo') undoNote(b.id);
       else if (act === 'clear') clearNote(b.id);
       else if (act === 'eraser'){ b.tool = (b.tool === 'eraser' ? 'pen' : 'eraser'); renderNotesBlocks(); }
+      else if (act === 'full') openNoteFullscreen(b.id);
     });
   });
   const tx = el.querySelector('.nb-text');
   if (tx) tx.addEventListener('input', () => { b.text = tx.value; });
   const cv = el.querySelector('.nb-canvas');
-  if (cv){ setupNoteCanvas(cv, b); drawNoteBlock(b); }
+  if (cv){
+    setupNoteCanvas(cv, b); drawNoteBlock(b);
+    const rz = el.querySelector('[data-resize]');
+    if (rz) rz.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      const startY = e.clientY, startH = Number(b.height) || 180;
+      const move = ev => {
+        b.height = Math.max(120, Math.min(720, startH + ev.clientY - startY));
+        cv.style.height = b.height + 'px';
+      };
+      const up = () => {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+      };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+  }
 }
 
 function setNoteMode(id, mode){
@@ -1920,13 +2094,20 @@ function clearNote(id){
   renderNotesBlocks();
 }
 
-function setupNoteCanvas(canvas, b){
+function setupNoteCanvas(canvas, b, opts){
+  const full = !!(opts && opts.full);
   const dpr = window.devicePixelRatio || 1;
+  let scale = 1;
+  const baseCanvas = () => $('.nb-block[data-nbid="' + b.id + '"] .nb-canvas');
   const fit = () => {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.max(1, Math.floor(h * dpr));
-    drawNoteBlock(b);
+    if (full){
+      const baseW = baseCanvas() ? baseCanvas().clientWidth : 360;
+      scale = w / Math.max(1, baseW);
+    }
+    paintNoteCanvas(canvas, b, scale);
   };
   fit();
   if (window.ResizeObserver) new ResizeObserver(fit).observe(canvas);
@@ -1934,56 +2115,62 @@ function setupNoteCanvas(canvas, b){
   let drawing = false, current = null;
   const getPt = (e) => {
     const r = canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
   };
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     try { canvas.setPointerCapture(e.pointerId); } catch(_){}
     const p = getPt(e);
     if (b.tool === 'eraser'){
-      const radius = 18;
-      b.strokes = b.strokes.filter(str => !str.points.some(pt => Math.hypot(pt.x - p.x, pt.y - p.y) <= radius));
-      drawNoteBlock(b);
-      renderNotesBlocks();
+      b.strokes = b.strokes.filter(str => !str.points.some(pt => Math.hypot(pt.x - p.x, pt.y - p.y) <= 18 / scale));
+      paintNoteCanvas(canvas, b, scale);
+      if (!full) renderNotesBlocks();
       return;
     }
     drawing = true;
     current = { points: [p] };
     b.strokes.push(current);
-    drawNoteBlock(b);
+    paintNoteCanvas(canvas, b, scale);
   });
   canvas.addEventListener('pointermove', e => {
     if (!drawing) return;
     e.preventDefault();
-    current.points.push(getPt(e));
-    drawNoteBlock(b);
+    const p = getPt(e);
+    current.points.push(p);
+    if (full && p.y > (Number(b.height) || 180) - 20){
+      b.height = Math.max(Number(b.height) || 180, Math.min(720, Math.ceil(p.y + 20)));
+      const base = baseCanvas();
+      if (base) base.style.height = b.height + 'px';
+    }
+    paintNoteCanvas(canvas, b, scale);
   });
-  const end = () => { if (!drawing) return; drawing = false; current = null; renderNotesBlocks(); };
+  const end = () => { if (!drawing) return; drawing = false; current = null; if (!full) renderNotesBlocks(); };
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('pointerleave', end);
 }
 
-function drawNoteBlock(b){
-  const cv = $('.nb-block[data-nbid="' + b.id + '"] .nb-canvas');
+function paintNoteCanvas(cv, b, scale){
   if (!cv) return;
   const ctx = cv.getContext('2d');
   if (!ctx) return;
   const dpr = window.devicePixelRatio || 1;
+  const sc = scale || 1;
   ctx.save();
   ctx.clearRect(0, 0, cv.width, cv.height);
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.scale(dpr, dpr);
+  ctx.scale(sc, sc);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.lineWidth = 2.2;
+  ctx.lineWidth = 2.2 / sc;
   ctx.strokeStyle = '#111';
   ctx.fillStyle = '#111';
   b.strokes.forEach(str => {
     if (str.points.length < 2){
       const p = str.points[0];
-      ctx.beginPath(); ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x, p.y, 1.1 / sc, 0, Math.PI * 2); ctx.fill();
       return;
     }
     ctx.beginPath();
@@ -1993,6 +2180,66 @@ function drawNoteBlock(b){
   });
   ctx.restore();
 }
+
+function drawNoteBlock(b){
+  const cv = $('.nb-block[data-nbid="' + b.id + '"] .nb-canvas');
+  if (!cv) return;
+  paintNoteCanvas(cv, b);
+}
+
+function openNoteFullscreen(id){
+  const b = noteBlockById(id);
+  if (!b) return;
+  closeNoteFullscreen();
+  state.noteFullId = id;
+  const wrap = document.createElement('div');
+  wrap.className = 'nb-fs';
+  wrap.id = 'nbFs';
+  wrap.innerHTML = '<div class="nb-fsbar">'
+    + '<b style="font-size:13px">全屏记录板</b>'
+    + '<button class="nb-tbtn" id="nbFsPlay">播放 / 暂停</button>'
+    + '<span class="spacer"></span>'
+    + '<button class="nb-tbtn" data-fs="undo">↶ 撤回</button>'
+    + '<button class="nb-tbtn" data-fs="eraser">橡皮擦</button>'
+    + '<button class="nb-tbtn" data-fs="clear">清空</button>'
+    + '<button class="nb-tbtn" data-fs="exit">退出全屏</button>'
+    + '</div><canvas id="nbFsCanvas"></canvas>'
+    + '<div class="tiny" style="padding:6px 10px">写完点「退出全屏」，回到记录板点「保存」才会存入本会话。</div>';
+  document.body.appendChild(wrap);
+  document.body.style.overflow = 'hidden';
+  const cv = $('#nbFsCanvas');
+  setupNoteCanvas(cv, b, { full: true });
+  paintNoteCanvas(cv, b);
+  $('#nbFsPlay').addEventListener('click', () => { togglePlay(); });
+  wrap.querySelectorAll('[data-fs]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.fs;
+      if (act === 'exit'){ closeNoteFullscreen(); return; }
+      if (act === 'undo') b.strokes.pop();
+      else if (act === 'clear') b.strokes = [];
+      else if (act === 'eraser'){
+        b.tool = b.tool === 'eraser' ? 'pen' : 'eraser';
+        btn.textContent = b.tool === 'eraser' ? '橡皮擦(开)' : '橡皮擦';
+        cv.classList.toggle('eraser', b.tool === 'eraser');
+        cv.style.cursor = b.tool === 'eraser' ? 'cell' : 'crosshair';
+      }
+      paintNoteCanvas(cv, b);
+      drawNoteBlock(b);
+    });
+  });
+}
+function closeNoteFullscreen(){
+  const wrap = $('#nbFs');
+  if (wrap) wrap.remove();
+  document.body.style.overflow = '';
+  const id = state.noteFullId;
+  state.noteFullId = null;
+  if (id != null){
+    const b = noteBlockById(id);
+    if (b) drawNoteBlock(b);
+  }
+}
+
 
 async function saveNotes(){
   if (!state.session) return;
@@ -2011,11 +2258,12 @@ function exportNotesPNG(){
       const lines = wrapText(b.text, bw - pad * 2, '16px sans-serif');
       return { block: b, h: padY * 2 + Math.max(1, lines.length) * lineH, lines };
     } else {
-      const bb = bbox(b.strokes);
+      const strokes = b.strokes;
+      const bb = bbox(strokes);
       const sw = bb.maxX - bb.minX, sh = bb.maxY - bb.minY;
       const scale = sw > (bw - pad * 2) ? (bw - pad * 2) / sw : 1;
       const dh = Math.max(90, sh * scale + padY * 2);
-      return { block: b, h: dh, scale, ox: -bb.minX, oy: -bb.minY };
+      return { block: b, strokes, h: dh, scale, ox: -bb.minX, oy: -bb.minY };
     }
   });
   const gap = 12;
@@ -2037,7 +2285,7 @@ function exportNotesPNG(){
       ctx.scale(it.scale, it.scale);
       ctx.translate(it.ox, it.oy);
       ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.2; ctx.strokeStyle = '#111'; ctx.fillStyle = '#111';
-      it.block.strokes.forEach(str => {
+      it.strokes.forEach(str => {
         if (str.points.length < 2){ const p = str.points[0]; ctx.beginPath(); ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2); ctx.fill(); return; }
         ctx.beginPath(); ctx.moveTo(str.points[0].x, str.points[0].y);
         for (let k = 1; k < str.points.length; k++) ctx.lineTo(str.points[k].x, str.points[k].y);
@@ -2097,7 +2345,8 @@ function printNotes(){
           return '<div style="border:1px solid #000;padding:14px 16px;margin-bottom:12px;white-space:pre-wrap;font-size:16px;line-height:1.7;background:#fff">' + esc(b.text) + '</div>';
         }
         const cv = document.createElement('canvas');
-        const bb = bbox(b.strokes);
+        const strokes = b.strokes;
+        const bb = bbox(strokes);
         const pad = 16;
         cv.width = Math.max(200, (bb.maxX - bb.minX) + pad * 2);
         cv.height = Math.max(80, (bb.maxY - bb.minY) + pad * 2);
@@ -2105,7 +2354,7 @@ function printNotes(){
         ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
         ctx.translate(pad - bb.minX, pad - bb.minY);
         ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.2; ctx.strokeStyle = '#111'; ctx.fillStyle = '#111';
-        b.strokes.forEach(str => {
+        strokes.forEach(str => {
           if (str.points.length < 2){ const p = str.points[0]; ctx.beginPath(); ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2); ctx.fill(); return; }
           ctx.beginPath(); ctx.moveTo(str.points[0].x, str.points[0].y);
           for (let k = 1; k < str.points.length; k++) ctx.lineTo(str.points[k].x, str.points[k].y);
@@ -2187,7 +2436,7 @@ async function fallbackSystem(reason){
     modal({
       title: '没有可用的朗读声音',
       body: '<p>这台设备上找不到 ' + esc(LANGS[s.lang].native) + ' 的系统语音。</p>'
-        + '<p class="small">三条出路：<br>① 到设置里选一个已安装的「Natural / Online」音色<br>② 在系统里安装该语言语音包（Mac：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音）<br>③ 把朗读方式改成「云端音频」，需要填密钥。</p>',
+        + '<p class="small">三条出路：<br>① 到设置里选一个已安装的「Natural / Online」音色<br>② 在系统里安装该语言语音包（' + esc(deviceInfo().voiceHint) + '）<br>③ 把朗读方式改成「云端音频」，需要填密钥。</p>',
       actions: [{ label: '去设置', primary: true, onClick: () => showView('settings') }]
     });
     return;
@@ -2384,17 +2633,13 @@ function readInnerHtml(){
       + (s.zhOn ? '<span class="zh">' + esc(sent.zh) + '</span>' : '') + '</div>';
   }).join('');
   const q = (state.readWordFilter || '').trim().toLowerCase();
-  const rows = s.words.map((w, i) => ({ w, i })).filter(({ w }) => {
-    if (!q) return true;
-    return (w.term || '').toLowerCase().includes(q)
-      || (w.zh || '').toLowerCase().includes(q)
-      || (w.pos || '').toLowerCase().includes(q)
-      || (w.note || '').toLowerCase().includes(q);
-  });
+  const rows = s.words.map((w, i) => ({ w, i })).filter(({ w }) => wordMatches(w, q));
   const wrows = rows.map(({ w, i }) => {
     const badge = w.isNew === false ? '<span class="tag">复习</span> ' : '';
-    return '<div class="wrow"><div class="wterm">' + esc(w.term) + (w.surface && w.surface !== w.term ? '<small>文中：' + esc(w.surface) + '</small>' : '') + '</div>'
-      + '<div class="wbody">' + badge + '<span class="pos">' + esc(w.pos) + '</span>' + esc(w.zh)
+    return '<div class="wrow"><div class="wterm">' + esc(w.term)
+      + (w.reading && w.reading !== w.term ? '<small>读音：' + esc(w.reading) + '</small>' : '')
+      + (w.surface && w.surface !== w.term ? '<small>文中：' + esc(w.surface) + '</small>' : '') + '</div>'
+      + '<div class="wbody">' + badge + (w.type === 'phrase' ? '<span class="tag">短语</span> ' : '') + '<span class="pos">' + esc(w.pos) + '</span>' + esc(w.zh)
       + (w.extra ? '<br><span class="tiny">' + esc(w.extra) + '</span>' : '')
       + (w.collocation ? '<br><span class="tiny">搭配：' + esc(w.collocation) + '</span>' : '')
       + (w.note ? '<br><span class="tiny wnoteShow">笔记：' + esc(w.note) + '</span>' : '')
@@ -2416,7 +2661,7 @@ function readInnerHtml(){
   + '<h3 style="margin-top:6px">这一篇的 ' + s.words.length + ' 个词' + (q ? '（显示 ' + rows.length + ' 个）' : '') + '</h3>'
   + '<div class="row" style="align-items:center;gap:8px;margin-bottom:8px">'
   +   '<span aria-hidden="true">🔍</span>'
-  +   '<input type="text" id="wordSearch" enterkeyhint="search" placeholder="查词：外文 / 中文 / 笔记（按回车搜索）" style="flex:1;min-width:0" value="' + esc(state.readWordFilter || '') + '">'
+  +   '<input type="text" id="wordSearch" enterkeyhint="search" placeholder="查词：外文 / 假名 / 中文 / 笔记（按回车搜索）" style="flex:1;min-width:0" value="' + esc(state.readWordFilter || '') + '">'
   + '</div>'
   + '<div class="wlist">' + wrows + '</div>';
 }
@@ -2530,7 +2775,7 @@ function readSentence(i){
     modal({
       title: '单句重读需要系统语音',
       body: '<p>这台设备上找不到 ' + esc(LANGS[s.lang].native) + ' 的系统语音。</p>'
-        + '<p class="small">你可以：<br>① 用上方吸顶播放器的 ▶ 整篇播放（云端音频不依赖系统语音）<br>② 到设置里选一个已安装的「Natural / Online」音色<br>③ 在系统里装好该语言的语音包</p>',
+        + '<p class="small">你可以：<br>① 用上方吸顶播放器的 ▶ 整篇播放（云端音频不依赖系统语音）<br>② 到设置里选一个已安装的「Natural / Online」音色<br>③ 在系统里装好该语言的语音包（' + esc(deviceInfo().voiceHint) + '）</p>',
       actions: [{ label: '知道了', primary: true }]
     });
     return;
@@ -2816,12 +3061,24 @@ function localCheer(words, lang){
   return tpl[Math.floor(Math.random() * tpl.length)];
 }
 async function aiCheer(words, langKey){
-  const list = words.slice(0, 12).map(w => (w.zh ? w.term + '（' + w.zh + '）' : w.term)).join('、');
+  const sameLang = (words || []).filter(w => w && w.term && (!langKey || w.lang === langKey));
+  const list = sameLang.slice(0, 12).map(w => w.term).join('、');
   const langName = langKey && LANGS[langKey] ? LANGS[langKey].name : '中文';
-  const prompt = '今天复习的词：' + list + '。请用' + langName + '写一句不超过 30 个词的鼓励语，自然用上其中至少 1 个词，不要引号、不要解释、不要换行，只输出这句话。';
+  const prompt = '今天复习的是' + langName + '词：' + list + '。请只用' + langName + '写一句不超过 30 个词的鼓励语，自然用上其中至少 1 个词。'
+    + '整句只能出现' + langName + '，不要混入任何其他语言的单词、中文解释、引号、换行或说明，只输出这句话。';
   const cand = await callGemini([{ text: prompt }], { temperature: 0.9, maxOutputTokens: 120 }, { retry: false });
   const txt = (cand.content.parts || []).map(p => p.text || '').join('').trim();
   return txt ? txt.replace(/^["“”„「」]+|["“”„「」]+$/g, '').slice(0, 80) : '';
+}
+function cheerIsMixed(txt, langKey, all){
+  if (!txt) return false;
+  if (langKey !== 'ja' && /[\u3040-\u30ff\u4e00-\u9fff]/.test(txt)) return true;
+  if (langKey === 'en' && /[äöüß]/i.test(txt)) return true;
+  const other = new Set((all || []).filter(w => w.lang && w.lang !== langKey && w.term)
+    .map(w => bare(w.term).toLowerCase()).filter(Boolean));
+  if (!other.size) return false;
+  const tokens = txt.toLowerCase().match(/[\p{L}\p{M}]+/gu) || [];
+  return tokens.some(t => other.has(t));
 }
 async function showAchievement(){
   const hist = await DB.all();
@@ -2843,23 +3100,26 @@ async function showAchievement(){
   ).join('');
   const total = Object.keys(by).reduce((n, k) => n + by[k].size, 0);
   const langKey = cheerLang(done);
-  const sig = all.map(w => (w.lang || '') + '|' + bare(w.term)).sort().join(',');
+  const cheerWords = langKey ? all.filter(w => w.lang === langKey) : all;
+  const sig = langKey + '|' + cheerWords.map(w => bare(w.term)).sort().join(',');
   const cached = readCheerCache(todayStr());
   const reuse = !!(cached && cached.sig === sig && cached.text);
   const hasKey = geminiKeyOk();
-  const cheer0 = reuse ? cached.text : localCheer(all, langKey);
+  const cheer0 = reuse ? cached.text : (hasKey ? '你真棒！' : localCheer(cheerWords, langKey));
   if (!reuse) saveCheerCache(todayStr(), sig, cheer0);
   modal({
     title: '今日成就',
     body: '<p class="small muted">' + todayStr() + ' · 完成 ' + done.length + ' 篇 · 共 ' + total + ' 个词</p>'
       + blocks
-      + '<div class="cheer" id="cheerBox">' + (hasKey && !reuse ? '<span class="spin"></span> 正在生成鼓励…' : esc(cheer0)) + '</div>',
+      + '<div class="cheer" id="cheerBox">' + esc(cheer0) + '</div>',
     actions: [{ label: '好', primary: true }]
   });
   if (hasKey && !reuse){
     let txt = '';
-    try { txt = await aiCheer(all, langKey); } catch(e){}
-    const finalTxt = txt || cheer0;
+    try {
+      txt = await Promise.race([aiCheer(cheerWords, langKey), sleep(10000).then(() => '')]);
+    } catch(e){}
+    const finalTxt = (txt && !cheerIsMixed(txt, langKey, all)) ? txt : '你真棒！';
     saveCheerCache(todayStr(), sig, finalTxt);
     const el = $('#cheerBox');
     if (el) el.textContent = finalTxt;
@@ -2886,8 +3146,8 @@ function parseDay(s){ const p = String(s || '').split('-').map(Number); return n
 function fmtDay(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function shiftDay(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function mondayOf(d){ const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
-function dueGapFor(s){
-  const d = dayDiff(s.date, todayStr());
+function dueGapFor(s, date){
+  const d = dayDiff(s.date, date || todayStr());
   return (REVIEW_GAPS.indexOf(d) >= 0 && (s.reviewed || []).indexOf(d) < 0) ? d : null;
 }
 function listRange(){
@@ -2970,8 +3230,10 @@ function langWords(lang){
     (s.words || []).forEach(w => {
       if (!w || !bare(w.term)) return;
       const k = (s.lang || '') + '|' + bare(w.term);
-      const rec = map.get(k) || { term: w.term, zh: w.zh || '', pos: w.pos || '', mark: '', lang: s.lang };
+      const rec = map.get(k) || { term: w.term, reading: w.reading || '', type: w.type || 'word', zh: w.zh || '', pos: w.pos || '', mark: '', lang: s.lang };
       if (!rec.zh && w.zh) rec.zh = w.zh;
+      if (!rec.reading && w.reading) rec.reading = w.reading;
+      if (w.type === 'phrase') rec.type = 'phrase';
       if (w.mark === 'miss') rec.mark = 'miss';
       else if (w.mark === 'fuzzy' && rec.mark !== 'miss') rec.mark = 'fuzzy';
       map.set(k, rec);
@@ -3018,7 +3280,7 @@ function calendarHtml(counts){
   +   '<label class="f" style="margin-top:12px">手动选择年月日（最早 ' + minD + '）</label>'
   +   datePickHtml('histDate', listState.calDate || todayStr(), minD)
   +   '<div class="row" style="margin-top:8px"><button class="btn small" id="histJump">跳到这一天</button></div>'
-  +   '<p class="tiny" style="margin:8px 0 0">点某一天，就按当前的「日 / 周 / 月」范围筛选下面的记录。</p>'
+  +   '<p class="tiny" style="margin:8px 0 0">点某一天，按当前「日 / 周 / 月」范围筛选下面的记录；上方的统计和当日回听队列则只看这一个日期。</p>'
   + '</div>';
 }
 
@@ -3068,8 +3330,7 @@ function openVocab(lang){
     const q = vs.q.trim().toLowerCase();
     let arr = all.filter(w => {
       if (vs.hard && score(w) === 0) return false;
-      if (!q) return true;
-      return (w.term || '').toLowerCase().includes(q) || (w.zh || '').includes(q) || (w.pos || '').includes(q);
+      return wordMatches(w, q);
     });
     if (vs.sort === 'za') arr.sort((a, b) => b.term.localeCompare(a.term));
     else if (vs.sort === 'hard') arr.sort((a, b) => score(b) - score(a) || a.term.localeCompare(b.term));
@@ -3080,8 +3341,9 @@ function openVocab(lang){
     if (!list) return;
     list.innerHTML = arr.length
       ? arr.map(w => '<div class="wrow"><div class="wterm">' + esc(w.term)
+          + (w.reading && w.reading !== w.term ? '<small>读音：' + esc(w.reading) + '</small>' : '')
           + (w.mark === 'miss' ? ' <span class="tag">不熟</span>' : w.mark === 'fuzzy' ? ' <span class="tag">模糊</span>' : '')
-          + '</div><div class="wbody">' + (w.pos ? '<span class="pos">' + esc(w.pos) + '</span>' : '') + esc(w.zh || '（无中文）') + '</div></div>').join('')
+          + '</div><div class="wbody">' + (w.type === 'phrase' ? '<span class="tag">短语</span> ' : '') + (w.pos ? '<span class="pos">' + esc(w.pos) + '</span>' : '') + esc(w.zh || '（无中文）') + '</div></div>').join('')
       : '<p class="tiny">没有符合条件的词。</p>';
   };
   modal({
@@ -3105,34 +3367,35 @@ function openVocab(lang){
   draw();
 }
 
-function statsCardHtml(list){
-  const doneDays = new Set((state.history || []).filter(s => s.done && s.done.read).map(s => s.date));
-  let d = parseDay(todayStr());
+function statsCardHtml(date){
+  const target = date || todayStr();
+  const allDone = (state.history || []).filter(s => s.done && s.done.read);
+  const doneDays = new Set(allDone.map(s => s.date));
+  let d = parseDay(target);
   if (!doneDays.has(fmtDay(d))) d = shiftDay(d, -1);
   let streak = 0;
   while (doneDays.has(fmtDay(d))){ streak++; d = shiftDay(d, -1); }
-  const done = list.filter(s => s.done && s.done.read);
-  const r = listRange();
+  const dayDone = allDone.filter(s => s.date === target);
   const langs = {};
-  done.forEach(s => { langs[s.lang] = (langs[s.lang] || 0) + 1; });
+  dayDone.forEach(s => { langs[s.lang] = (langs[s.lang] || 0) + 1; });
   const langRows = Object.keys(langs).length
     ? Object.keys(langs).sort().map(k => {
         const n = langs[k];
-        const pct = Math.round(n / done.length * 100);
+        const pct = Math.round(n / dayDone.length * 100);
         return '<div class="sbar"><span class="lbl">' + (LANGS[k] ? LANGS[k].native : k) + '</span>'
           + '<div class="track"><div class="fill" style="width:' + pct + '%"></div></div>'
           + '<span class="n">' + n + '</span></div>';
       }).join('')
-    : '<p class="tiny">这个范围内还没有完成的记录。</p>';
+    : '<p class="tiny">这一天还没有完成的记录。</p>';
   return ''
   + '<div class="card">'
   +   '<div class="row" style="justify-content:space-between">'
   +     '<h2 style="margin:0">学习统计</h2>'
-  +     '<span class="tiny">' + (r ? calRangeLabel() : '最近 14 天') + '</span>'
+  +     '<span class="tiny">' + (target === todayStr() ? '今天 · ' + target : '选中日期 · ' + target) + '</span>'
   +   '</div>'
   +   '<div class="statgrid">'
   +     '<div class="statbox"><b>' + streak + '</b><span>连续学习天数</span></div>'
-  +     '<div class="statbox"><b>' + done.length + '</b><span>范围内完成篇数</span></div>'
+  +     '<div class="statbox"><b>' + dayDone.length + '</b><span>当日完成篇数</span></div>'
   +     '<div class="statbox"><b>' + Object.keys(langs).length + '</b><span>涉及语种</span></div>'
   +   '</div>'
   +   '<h3>语种分布</h3>' + langRows
@@ -3144,7 +3407,11 @@ async function renderHistory(){
   root.innerHTML = '<div class="card"><div class="tiny">读取中…</div></div>';
   state.history = await DB.all();
   if (!listState.calMonth) listState.calMonth = todayStr().slice(0, 7);
-  const due = dueSessions(state.history);
+  const targetDate = listState.calDate || todayStr();
+  const duePrefix = targetDate === todayStr() ? '今天有 ' : targetDate + ' 有 ';
+  const donePrefix = targetDate === todayStr() ? '今天的回听已完成' : targetDate + ' 的回听已完成';
+  const due = dueSessions(state.history, targetDate);
+  const reviewed = reviewedSessions(state.history, targetDate);
   const q = listState.filter.trim().toLowerCase();
   const range = listRange();
   const list = state.history.filter(s => {
@@ -3158,24 +3425,31 @@ async function renderHistory(){
   const counts = {};
   state.history.forEach(s => { counts[s.date] = (counts[s.date] || 0) + 1; });
 
-  const dueHtml = due.length
-    ? '<div class="banner"><b>今天有 ' + due.length + ' 篇该回听</b>'
-      + '<div class="tiny" style="margin:4px 0 8px">不用重做，听一遍 60 秒就够。每日最多回听 7 篇。</div>'
-      + due.map(d => '<div class="row" style="margin-top:6px"><span class="small" style="flex:1">' + esc(d.session.title) + ' <span class="muted">· 第 ' + d.gap + ' 天</span></span><button class="btn small" data-review="' + d.session.id + '">回听</button></div>').join('')
+  const reviewedTitles = reviewed.slice(0, 10).map(d => esc(d.session.title)).join('、')
+    + (reviewed.length > 10 ? ' 等 ' + reviewed.length + ' 篇' : '');
+  const dueHtml = (due.length || reviewed.length)
+    ? '<div class="banner">'
+      + (due.length
+        ? '<b>' + duePrefix + due.length + ' 篇该回听</b>'
+        : '<b>' + donePrefix + '</b>')
+      + (due.length ? '<div class="tiny" style="margin:4px 0 8px">不用重做，听一遍 60 秒就够。每日最多回听 7 篇。</div>' : '')
+      + due.map(d => '<div class="row" style="margin-top:6px"><span class="small" style="flex:1">' + esc(d.session.title) + ' <span class="muted">· 第 ' + d.gap + ' 天</span></span><button class="btn small" data-review="' + d.session.id + '" data-reviewgap="' + d.gap + '">回听</button></div>').join('')
+      + (reviewed.length ? '<div class="tiny" style="margin-top:8px;line-height:1.6">已回听：' + reviewedTitles + '</div>' : '')
       + '</div>'
     : '';
 
   const items = list.length
     ? list.map(s => {
         const sel = listState.sel.has(s.id);
+        const gap = dueGapFor(s, targetDate);
         return '<div class="listitem">'
           + '<input type="checkbox" data-check="' + s.id + '"' + (sel ? ' checked' : '') + ' style="margin-top:4px">'
           + '<div class="meta">'
           +   '<div class="ttl">' + esc(s.title) + (s.demo ? ' <span class="tag">演示</span>' : '') + '</div>'
-          +   '<div class="sub">' + s.date + ' · ' + LANGS[s.lang].native + (s.level ? ' · ' + esc(s.level) : '') + ' · ' + (s.words || []).length + ' 个词' + (s.done && s.done.read ? '' : ' · 未完成') + (dueGapFor(s) != null ? ' · 待回听' : '') + (s.lastReviewedOn ? ' · 已回听 ' + s.lastReviewedOn : '') + '</div>'
+          +   '<div class="sub">' + s.date + ' · ' + LANGS[s.lang].native + (s.level ? ' · ' + esc(s.level) : '') + ' · ' + (s.words || []).length + ' 个词' + (s.done && s.done.read ? '' : ' · 未完成') + (gap != null ? ' · 待回听' : '') + (s.lastReviewedOn ? ' · 已回听 ' + s.lastReviewedOn : '') + '</div>'
           +   '<div class="sub" style="margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc((s.sentences || []).map(x => x.text).join(' ').slice(0, 46)) + '…</div>'
           + '</div>'
-          + '<div style="display:flex;flex-direction:column;gap:6px;flex:none">'
+          + '<div class="acts">'
           +   '<button class="btn small" data-listen="' + s.id + '">回听</button>'
           +   '<button class="btn small" data-open="' + s.id + '">打开</button>'
           +   '<button class="btn small ghost" data-clearaudio="' + s.id + '" title="删除这篇的朗读缓存">清音频</button>'
@@ -3187,7 +3461,7 @@ async function renderHistory(){
   root.innerHTML = ''
   + dueHtml
   + calendarHtml(counts)
-  + statsCardHtml(list)
+  + statsCardHtml(targetDate)
   + '<div class="card">'
   +   '<div class="row" style="justify-content:space-between">'
   +     '<h2 style="margin:0">历史记录</h2>'
@@ -3313,13 +3587,13 @@ async function renderHistory(){
   $$('#view-history [data-listen]').forEach(b => b.addEventListener('click', () => {
     const s = state.history.find(x => x.id === b.dataset.listen);
     if (!s) return;
-    openSession(s, 1, { readOnly: true, reviewGap: dueGapFor(s) });
+    openSession(s, 1, { readOnly: true, reviewGap: dueGapFor(s, targetDate) });
     setTimeout(() => { playSession(); }, 260);
   }));
   $$('#view-history [data-review]').forEach(b => b.addEventListener('click', () => {
     const s = state.history.find(x => x.id === b.dataset.review);
     if (!s) return;
-    openSession(s, 1, { readOnly: true, reviewGap: dueGapFor(s) });
+    openSession(s, 1, { readOnly: true, reviewGap: Number(b.dataset.reviewgap) });
     setTimeout(() => { playSession(); }, 260);
   }));
   $$('#view-history [data-vocab]').forEach(b => b.addEventListener('click', () => openVocab(b.dataset.vocab)));
@@ -3339,6 +3613,46 @@ function openSession(s, step, opts){
   state.step = 1;
   state.retellLevel = 0;
   showView('today');
+  offerRegenerateIfBroken(s);
+}
+
+function offerRegenerateIfBroken(s){
+  const issues = sentenceIssues((s && s.sentences) || [], s && s.lang);
+  if (!issues.length) return;
+  setTimeout(() => {
+    modal({
+      title: '这篇短文的句子不完整',
+      body: '<p class="small">这篇的原文有些句子只写了句首，整篇朗读会听起来像提示词。</p>'
+        + '<p class="tiny">问题：' + esc(issues.slice(0, 3).join('；')) + '</p>'
+        + '<p class="small">' + (geminiKeyOk() ? '可以让 AI 按原来的词重写一篇完整短文，学习记录会保留在原来的日期。' : '重写需要 Google 密钥；也可以先只看译文，或到设置里配置密钥。') + '</p>',
+      actions: geminiKeyOk()
+        ? [{ label: '仅查看', ghost: true }, { label: '重新生成', primary: true, onClick: () => regenerateSession(s) }]
+        : [{ label: '知道了', primary: true }]
+    });
+  }, 120);
+}
+
+async function regenerateSession(s){
+  const words = ((s && s.words) || []).map(w => ({ term: w.term, zhHint: w.zh || '' })).filter(w => w.term).slice(0, 10);
+  if (!words.length){ toast('这篇没有可用的词，无法重写'); return; }
+  try {
+    const fresh = await generateSession(words, s.level || 'auto', s.lang);
+    fresh.id = s.id;
+    fresh.date = s.date;
+    fresh.createdAt = s.createdAt || Date.now();
+    fresh.demo = s.demo;
+    fresh.notes = s.notes || [];
+    await DB.put(fresh);
+    state.history = await DB.all();
+    enterSession(fresh, true, false);
+    state.reviewGap = null;
+    state.step = 1;
+    state.retellLevel = 0;
+    renderToday();
+    toast('已按原来的词重写这篇短文');
+  } catch(e){
+    showApiError(e, () => regenerateSession(s));
+  }
 }
 
 /* ============================ 帮助 ============================ */
@@ -3361,24 +3675,41 @@ function renderHelp(){
   +   '<p class="small"><b>3. 阅读（5 分钟）</b>：点「显示短文与词表」后，对照译文和词条看一遍，再点播放边看边听一遍。这是最难也最值钱的一步。</p>'
   +   '<p class="tiny">点「完成今天」后，这篇会在第 1 / 3 / 7 / 14 / 29 / 59 天后回到历史的复习队列。回听只花 1 分钟，不用重做题；每天最多 7 篇。</p>'
   +   '<p class="small"><b>历史怎么用</b>：日历上按「日 / 周 / 月」切换范围，点某一天就筛选下面那一段记录；还能按语种筛选、搜索（回车触发）和批量删除。每条记录右侧有「回听」（直接开始听）、「打开」（从阅读页查看）和「清音频」，只读页脚的「已复习 ✓」会记下这次回听。日历下方可以手动选年月日跳到某一天，最早只能选开始使用的那天。要一次清掉当前筛选范围，用「清空筛选范围」，删除后还能点一次「撤销」。</p>'
-  +   '<p class="small"><b>学习统计</b>：历史页会按当前日期范围显示连续学习天数、完成篇数和语种分布；每日篇数直接看日历上的数字。</p>'
+  +   '<p class="small"><b>学习统计</b>：只跟日历选中的单个日期走，未选时默认今天；显示该日的连续学习天数、完成篇数和语种分布，不受下方搜索或语种筛选影响。</p>'
+  +   '<p class="small"><b>当日回听</b>：顶部队列也只按选中的单日计算到期篇目；完成回听后会在队列下方显示「已回听：标题、标题…」。</p>'
   +   '<p class="small"><b>今日成就</b>：今天完成至少一篇听读后，今日页右上角的 🚩 会亮起；点它可以看到今天各语种复习了多少词，底部会按今天的主语种生成一句用上今日词的鼓励。同一天不会反复换句，只有学了新词才会更新。</p>'
   +   '<p class="small"><b>随机抽查</b>：完成今日后可以抽本日或全部词库。默认一次 10 个词，在「设置 → 随机抽查」里可以选只抽当前学习语言或混合所有语言，并给每种语言单独设上限。显示答案后可以标记「都记住了 / 有没记住的」，结果会留档并在设置里显示最近几次的概况。</p>'
   + '</div>'
 
   + '<div class="card">'
   +   '<h2>阅读页的词表</h2>'
-  +   '<p class="small">词表会显示外文原型、词性、中文和你的<b>笔记</b>。顶部的 🔍 输入后按<b>回车</b>才开始查词，不会打断输入；清空后再回车就恢复全部词。</p>'
+  +   '<p class="small">词表会显示外文原型、日语读音、词性、中文和你的<b>笔记</b>；短语会带「短语」角标。顶部的 🔍 输入后按<b>回车</b>才开始查词，不会打断输入；清空后再回车就恢复全部词。</p>'
+  +   '<p class="small">搜索会同时匹配外文、假名读音、中文、词性和笔记。输入平假名也能找到对应汉字词，片假名会自动按平假名比较。</p>'
   +   '<p class="small">历史里的「分语种总词表」也能搜索（回车触发）、只看不熟，并按字母或不熟程度排序。</p>'
   + '</div>'
 
   + '<div class="card">'
-  +   '<h2>输入单词</h2>'
-  +   '<p class="small">每行一个，最多 10 个。只写外文原型就够，中文可留空：</p>'
-  +   '<pre class="tiny" style="background:var(--soft);padding:10px;border-radius:8px;overflow:auto;line-height:1.8">resilient\nnegotiate\nTisch\n食べる</pre>'
-  +   '<p class="small">也可以把背单词软件里的「单词 + 中文」整段粘进来，下面几种写法都能识别：</p>'
-  +   '<pre class="tiny" style="background:var(--soft);padding:10px;border-radius:8px;overflow:auto;line-height:1.8">resilient | 有韧性的\nder Tisch\t桌子\n1. 食べる  吃</pre>'
-  +   '<p class="tiny">德语名词请写原型（Tisch 或 der Tisch 都行），工具会让 AI 补上冠词、复数和变格信息。</p>'
+  +   '<h2>记录板</h2>'
+  +   '<p class="small">记录板有两种：<b>打字</b>和<b>手写</b>。打字框可以自己拖右下角拉长；手写板底部有拖动条，可以上下拉高（120–720 像素），每块高度会随会话保存。</p>'
+  +   '<p class="small">手写板右上角的「全屏」会铺满整屏，适合手机写字；全屏里有「播放 / 暂停」，不用退出也能继续听。全屏只是临时画布，退出后记得点「保存」。</p>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>输入词与固定短语</h2>'
+  +   '<p class="small"><b>每行默认一条</b>，最多 10 条。空格不会拆词，所以固定短语可以整行写：</p>'
+  +   '<pre class="tiny" style="background:var(--soft);padding:10px;border-radius:8px;overflow:auto;line-height:1.8">resilient\nin Anspruch nehmen｜采取\n安い/やすい｜便宜的</pre>'
+  +   '<p class="small">分隔规则：空行忽略；分号 <code>；</code> 永远分隔；没有「｜」时，逗号或顿号才分隔。有「｜」时，逗号会留在中文释义里。</p>'
+  +   '<pre class="tiny" style="background:var(--soft);padding:10px;border-radius:8px;overflow:auto;line-height:1.8">apple, banana\nresilient | 有韧性的\nin Anspruch nehmen｜采取、利用</pre>'
+  +   '<p class="small"><b>日语读音必须手动写斜杠</b>：<code>安い/やすい</code>，左边汉字、右边假名。程序不会自动转换，也不会猜读音；只有一个写法时可以只写一个。</p>'
+  +   '<p class="tiny">德语名词写原型（Tisch 或 der Tisch 都行）。带空格的条目会按短语处理：AI 会把它当成一个整体写进短文，并给出搭配说明。</p>'
+  + '</div>'
+
+  + '<div class="card">'
+  +   '<h2>设备支持与语音包</h2>'
+  +   '<p class="small">Windows / macOS 的 Chrome、Edge：功能完整。Android 的 Chrome/Edge：功能完整，系统语音质量取决于是否装了 Google 语音服务。iPhone / iPad 的 Safari：可用，但系统音色较少，网站数据可能被系统清理，建议定期导出备份。</p>'
+  +   '<p class="small">设置 → 音色 →「语音体检」会显示当前设备、找到多少音色、是否出现 Google 音色。网页只能读音色列表，<b>读不到安卓已安装的语音包名称</b>，所以「未检测到 Google 音色」也可能是语音列表还没加载完。</p>'
+  +   '<p class="small" id="voicePathHelp">语音包安装路径：' + esc(deviceInfo().voiceHint) + '</p>'
+  +   '<p class="tiny">如果系统语音不可用，可在设置里改用云端音频（不依赖本机语音包）。</p>'
   + '</div>'
 
   + '<div class="card">'
@@ -3406,6 +3737,39 @@ function renderHelp(){
 
   $('#replayGuide').addEventListener('click', () => showOnboarding(0));
   $('#replayRetell').addEventListener('click', showRetellGuide);
+  buildToc('view-help');
+}
+
+function buildToc(scopeId){
+  const root = $('#' + scopeId);
+  if (!root) return;
+  const items = [];
+  Array.from(root.children).forEach((el, idx) => {
+    if (!el.classList || !el.classList.contains('card')) return;
+    const h = el.querySelector('h1,h2');
+    if (!h) return;
+    const id = scopeId + '-sec-' + idx;
+    el.id = id;
+    items.push({ id, label: h.textContent.trim() });
+  });
+  if (!items.length) return;
+  const fab = document.createElement('button');
+  fab.className = 'tocFab';
+  fab.type = 'button';
+  fab.textContent = '目录';
+  const panel = document.createElement('aside');
+  panel.className = 'tocPanel hide';
+  panel.innerHTML = '<h4>本页目录</h4>'
+    + items.map(it => '<a href="#' + it.id + '" data-toc="' + it.id + '">' + esc(it.label) + '</a>').join('');
+  fab.addEventListener('click', () => panel.classList.toggle('hide'));
+  panel.querySelectorAll('[data-toc]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.getElementById(a.dataset.toc);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    panel.classList.add('hide');
+  }));
+  root.appendChild(fab);
+  root.appendChild(panel);
 }
 
 /* ============================ 设置 ============================ */
@@ -3508,9 +3872,11 @@ async function renderSettings(){
 
   + '<div class="card">'
   +   '<h2>音色</h2>'
+  +   '<p class="tiny">当前设备：<b>' + esc(deviceInfo().name) + '</b> · ' + esc(deviceInfo().browser) + '。语音包路径见「语音体检」。</p>'
   +   '<p class="tiny">只影响「设备语音」。留空＝自动挑，优先带 Natural / Online / Neural 字样的音色。选完会自动试听一句。</p>'
   +   Object.keys(LANGS).map(voiceSelectHtml).join('')
   +   '<div class="row" style="margin-top:12px"><button class="btn small" id="reloadVoices">刷新音色列表</button></div>'
+  +   (deviceInfo().storageHint ? '<p class="tiny">' + esc(deviceInfo().storageHint) + '</p>' : '')
   + '</div>'
 
   + '<div class="card">'
@@ -3664,10 +4030,22 @@ async function renderSettings(){
       } }]
     });
   });
+  buildToc('view-settings');
 }
 
-function showVoiceReport(){
+async function showVoiceReport(){
   refreshVoices();
+  if (!voices.length && 'speechSynthesis' in window){
+    await new Promise(resolve => {
+      const timer = setTimeout(resolve, 800);
+      window.speechSynthesis.addEventListener('voiceschanged', () => {
+        clearTimeout(timer); refreshVoices(); resolve();
+      }, { once: true });
+    });
+  }
+  refreshVoices();
+  const dev = deviceInfo();
+  const googleVoices = voices.filter(v => /google/i.test(v.name || ''));
   const rows = Object.keys(LANGS).map(k => {
     const list = voicesFor(k);
     if (!list.length){
@@ -3680,13 +4058,19 @@ function showVoiceReport(){
   const missing = Object.keys(LANGS).filter(k => !voicesFor(k).length).map(k => LANGS[k].native);
   modal({
     title: '语音体检',
-    body: '<p class="small">下面是这台设备浏览器实际能找到的音色（来自系统）。</p>'
+    body: '<p class="small">当前设备：<b>' + dev.name + '</b> · ' + dev.browser + '</p>'
+      + '<p class="small">Google 音色：<b>' + (googleVoices.length ? '检测到 ' + googleVoices.length + ' 个' : '未检测到') + '</b>'
+      + ' <span class="tiny muted">（网页只能看到音色列表，读不到已安装的语音包名称；安卓上未检测到也可能是列表还没加载完）</span></p>'
       + rows
       + (missing.length
-        ? '<p class="small warnbox">缺 ' + missing.join('、') + '。可以：① 装系统语音包（Mac：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音）② 用云端音频。</p>'
+        ? '<p class="small warnbox">缺 ' + missing.join('、') + '。安装路径：' + esc(dev.voiceHint) + '；或者改用云端音频。</p>'
         : '<p class="small muted">三种语言都有可用音色。带 Natural / Online 字样的通常最好听，可以在「音色」里手动指定。</p>')
-      + '<p class="tiny">手机上的可用音色来自系统 TTS，装了 Google 语音包的安卓最全。</p>',
-    actions: [{ label: '好', primary: true }]
+      + (dev.storageHint ? '<p class="tiny">' + esc(dev.storageHint) + '</p>' : '')
+      + '<p class="tiny">手机音色来自系统 TTS；安卓装了 Google 语音包通常最全。装完后回到这里点「刷新列表」。</p>',
+    actions: [
+      { label: '刷新列表', onClick: () => setTimeout(showVoiceReport, 0) },
+      { label: '好', primary: true }
+    ]
   });
 }
 
@@ -3746,8 +4130,8 @@ function showOnboarding(i){
     },
     {
       t: '怎么开始',
-      b: '<p>把今天背的 10 个词粘进输入框（每行一个，中文可省），选语言和难度，点「生成短文」。</p>'
-        + '<p class="small">德语名词只写原型就行，工具会补冠词和复数。日语写辞书形。</p>'
+      b: '<p>把今天背的词或固定短语粘进输入框（每行一条，中文可省），选语言和难度，点「生成短文」。空格不会拆词，<code>in Anspruch nehmen｜采取</code> 会整条学习。</p>'
+        + '<p class="small">德语名词只写原型就行，工具会补冠词和复数。日语写辞书形，并在斜杠后手动加假名：<code>安い/やすい</code>。</p>'
         + '<p class="tiny">随时可以在「帮助」里重看这份引导。</p>'
     }
   ];
