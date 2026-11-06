@@ -99,6 +99,8 @@ textarea{resize:vertical;min-height:110px;font-family:ui-monospace,"SF Mono",Men
 .pill.mini{padding:4px 10px;font-size:12px}
 
 .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.tag.warn{background:rgba(234,128,30,.15);color:#c87200;border:1px solid rgba(234,128,30,.35)}
+.tag.ok{background:rgba(46,125,50,.12);color:#2e7d32;border:1px solid rgba(46,125,50,.3)}
 
 .steps{display:flex;gap:6px;margin-bottom:14px}
 .steps button{
@@ -304,6 +306,7 @@ details[open] summary{margin-bottom:8px}
 .modal h3{margin:0 0 10px;font-size:18px}
 .modal .mbody{font-size:14px;line-height:1.7;color:var(--ink)}
 .modal .mactions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.mi-input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;box-sizing:border-box;background:var(--bg);color:var(--ink);resize:vertical}
 .dots{display:flex;gap:5px;justify-content:center;margin-top:14px}
 .dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
 .dots i.on{background:var(--brand);width:16px;border-radius:3px}
@@ -708,6 +711,14 @@ function parseWords(raw){
 }
 const ARTICLES = /^(der|die|das|den|dem|des|le|la|les|el|los|las|il|lo|gli|un|une|uno|una)\s+/i;
 function bare(term){ return String(term || '').replace(ARTICLES, '').trim().toLowerCase(); }
+function allHistoricalBareTerms(lang){
+  const set = new Set();
+  (state.history || []).forEach(s => {
+    if (lang && s.lang !== lang) return;
+    (s.words || []).forEach(w => { if (w && w.term) set.add(bare(w.term)); });
+  });
+  return set;
+}
 function wordMatches(w, q){
   q = String(q || '').trim().toLowerCase();
   if (!q) return true;
@@ -1339,6 +1350,102 @@ function demoSession(lang){
   };
 }
 
+function openManualImport(){
+  const m = modal({
+    title: '手动导入一篇短文',
+    dismissable: true,
+    body: ''
+      + '<p class="small muted">模型繁忙或你已有现成文本/音频时用。短文每行一条，中文译文用 <code>｜</code> 跟在外文后面（可空）。</p>'
+      + '<label class="f">标题（可选）</label>'
+      + '<input id="miTitle" class="mi-input" placeholder="例如「周末的咖啡馆」">'
+      + '<label class="f" style="margin-top:10px">语言</label>'
+      + '<div class="pills" id="miLangPills">'
+      +   Object.keys(LANGS).map(k => '<button class="pill' + (k === state.draft.lang ? ' on' : '') + '" data-lang="' + k + '">' + LANGS[k].native + '</button>').join('')
+      + '</div>'
+      + '<label class="f" style="margin-top:10px">短文（每行一条，最多 8 条）</label>'
+      + '<textarea id="miText" class="mi-input" rows="6" placeholder="Ich trinke gerne Kaffee｜我喜欢喝咖啡&#10;Am Wochenende gehe ich oft ins Café"></textarea>'
+      + '<label class="f" style="margin-top:10px">音频（可选，用于「听」第一遍）</label>'
+      + '<input type="file" id="miAudio" accept="audio/*" style="font:inherit">'
+      + '<div class="tiny muted" id="miAudioInfo"></div>'
+      + '<label class="f" style="margin-top:10px">重点单词或短语（可选，每行 / 分号 / 逗号分隔）</label>'
+      + '<textarea id="miWords" class="mi-input" rows="3" placeholder="Kaffee, Wochenende ins Café"></textarea>'
+      + '<div class="tiny muted" style="margin-top:6px">已有现成音频 → 可直接导入；没有音频也能导入，只是第一遍听会走设备 TTS。</div>',
+    actions: [
+      { label: '取消', ghost: true },
+      { label: '导入并进入学习', primary: true, onClick: async (close) => {
+          const title = ($('#miTitle') || {}).value || '';
+          const lang = (document.querySelector('#miLangPills .pill.on') || {}).dataset.lang || state.draft.lang;
+          const text = ($('#miText') || {}).value || '';
+          const wordsRaw = ($('#miWords') || {}).value || '';
+          if (!text.trim()){ toast('短文不能为空'); return false; }
+          const audioFile = ($('#miAudio') || {}).files && $('#miAudio').files[0];
+          const blob = audioFile ? await audioFile.arrayBuffer().then(b => new Blob([b], { type: audioFile.type || 'audio/*' })) : null;
+          const session = buildManualSession({ title, lang, text, wordsRaw, blob });
+          await DB.put(session);
+          if (blob){ await DB.putAudio(session.id, blob); }
+          state.history = await DB.all();
+          enterSession(session, !blob); // 有音频 → 需解锁；无音频 → 直接开始
+          state.draft.review = null; state.draft.reviewCollapsed = false;
+          toast(blob ? '已导入，开始听第一遍' : '已导入，开始学习');
+          close();
+          renderToday();
+        }
+      }
+    ]
+  });
+  // 绑定语言切换
+  document.querySelectorAll('#miLangPills .pill').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#miLangPills .pill').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+  }));
+  // 显示音频文件信息
+  const af = document.querySelector('#miAudio');
+  const info = document.querySelector('#miAudioInfo');
+  if (af && info){
+    af.addEventListener('change', () => {
+      const f = af.files && af.files[0];
+      info.textContent = f ? '已选：' + f.name + ' · ' + (f.size / 1024 / 1024).toFixed(1) + ' MB' : '';
+    });
+  }
+}
+
+function buildManualSession({ title, lang, text, wordsRaw, blob }){
+  const lines = String(text || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean).slice(0, 8);
+  const sentences = lines.map(line => {
+    const pipe = line.search(/[|｜]/);
+    let foreign = line, zh = '';
+    if (pipe >= 0){ foreign = line.slice(0, pipe).trim(); zh = line.slice(pipe + 1).trim(); }
+    const starter = lang === 'ja'
+      ? (foreign.split(/[、。!！?？]/)[0] || foreign).slice(0, 12)
+      : foreign.split(/\s+/).slice(0, 4).join(' ');
+    return { text: foreign, zh, starter, keywords: [], verb: '' };
+  }).filter(s => s.text);
+
+  const parsedWords = parseWords(wordsRaw).slice(0, 10);
+  const words = parsedWords.map((w, i) => ({
+    term: w.term, surface: w.term, reading: w.reading || '',
+    type: w.type === 'phrase' ? 'phrase' : 'word',
+    pos: '', zh: w.zhHint || '', extra: '', collocation: '',
+    note: '', sentence: Math.min(sentences.length - 1, Math.floor(i / Math.max(1, parsedWords.length / Math.max(1, sentences.length)))),
+    mark: null, isNew: true
+  }));
+
+  return {
+    id: uid(),
+    date: todayStr(),
+    lang,
+    level: '',
+    levelReason: '手动导入',
+    title: title.trim() || ('手动短文 · ' + todayStr()),
+    sentences,
+    words,
+    demo: false,
+    done: { listen: false, retell: false, read: false },
+    reviewed: [],
+    createdAt: Date.now()
+  };
+}
+
 /* ============================ 今日页状态 ============================ */
 const state = {
   session: null, step: 1, retellLevel: 0,
@@ -1397,9 +1504,10 @@ function setupHtml(){
   +   '<div id="poolBox" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">'
   +     '<div class="tiny" style="margin-bottom:6px">复习带词</div>' + oldChips
   +   '</div>'
-  +   '<div class="row" style="margin-top:16px">'
+  +   '<div class="row" style="margin-top:16px;flex-wrap:wrap;gap:10px">'
   +     '<button class="btn primary lg" id="genBtn">生成短文</button>'
   +     '<button class="btn lg" id="demoBtn">先用演示数据看流程</button>'
+  +     '<button class="btn ghost lg" id="manualImport" title="模型繁忙或想自己粘贴时用">手动导入短文…</button>'
   +   '</div>'
   + '</div>'
   + (settings.tipsSeen ? '' :
@@ -1501,15 +1609,22 @@ function renderPreview(){
   const list = state.draft.review;
   if (!list || !list.length){ box.innerHTML = ''; return; }
   if (state.draft.reviewCollapsed){
+    const dupN = list.filter(w => w.duplicate).length;
     box.innerHTML = '<div class="card tight" style="margin-top:10px">'
       + '<div class="row" style="justify-content:space-between;align-items:center">'
-      +   '<div class="tiny">词表已收起（' + list.length + ' 个词）</div>'
+      +   '<div class="tiny">词表已收起（' + list.length + ' 个词' + (dupN ? '，含 ' + dupN + ' 个已学过' : '') + '）</div>'
       +   '<button class="btn small" id="pExpand">展开</button>'
       + '</div></div>';
     $('#pExpand').addEventListener('click', () => { state.draft.reviewCollapsed = false; renderPreview(); });
     return;
   }
+  const histSet = allHistoricalBareTerms(state.draft.lang);
+  const dupCount = list.filter(w => w.duplicate).length;
+  const banner = dupCount
+    ? '<div style="margin:0 0 8px;padding:8px 10px;border-radius:8px;background:rgba(234,128,30,.12);color:#c87200;font-size:13px">⚠️ 检测到 ' + dupCount + ' 个单词已在历史上学过（短语不受影响），可考虑替换。</div>'
+    : '';
   box.innerHTML = '<div class="card tight" style="margin-top:10px">'
+    + banner
     + '<div class="row" style="justify-content:space-between;align-items:center">'
     +   '<div class="tiny">识别到 ' + list.length + ' 条（词或短语，最多 10 条）</div>'
     +   '<button class="btn ghost small" id="pAdd">+ 添加一个</button>'
@@ -1519,6 +1634,7 @@ function renderPreview(){
         + '<input class="pterm" data-pterm="' + i + '" value="' + esc(w.term) + '" placeholder="' + (w.type === 'phrase' ? '完整短语' : '外文词') + '">'
         + (state.draft.lang === 'ja' ? '<input class="preading" data-preading="' + i + '" value="' + esc(w.reading || '') + '" placeholder="假名读音">' : '')
         + '<input class="pzh" data-pzh="' + i + '" value="' + esc(w.zhHint) + '" placeholder="中文（可空）">'
+        + (w.duplicate ? '<span class="tag warn" title="该词已在历史上学过">已学过</span>' : '')
         + '<button class="btn ghost small" data-pdel="' + i + '">删</button></div>'
       ).join('') + '</div>'
     + '<div class="row" style="margin-top:10px">'
@@ -1530,6 +1646,8 @@ function renderPreview(){
     if (list[i]){
       list[i].term = el.value;
       list[i].type = /\s/.test(el.value.trim()) ? 'phrase' : 'word';
+      if (list[i].type !== 'phrase') list[i].duplicate = histSet.has(bare(list[i].term));
+      else list[i].duplicate = false;
     }
     clearWordInput();
   }));
@@ -1581,12 +1699,18 @@ function bindSetup(){
     updateWordCount();
   });
   $('#previewBtn').addEventListener('click', () => {
-    const list = parseWords(ta.value).map(w => ({ term: w.term, reading: w.reading, zhHint: w.zhHint, type: w.type }));
+    const histSet = allHistoricalBareTerms(state.draft.lang);
+    const list = parseWords(ta.value).map(w => ({
+      term: w.term, reading: w.reading, zhHint: w.zhHint, type: w.type,
+      duplicate: w.type !== 'phrase' && histSet.has(bare(w.term))
+    }));
     if (!list.length){ toast('没有识别到词或短语'); return; }
+    const dupN = list.filter(w => w.duplicate).length;
     state.draft.review = list;
     state.draft.reviewCollapsed = false;
     renderPreview();
-    toast('已识别 ' + list.length + ' 条，可逐行修改');
+    if (dupN) toast('已识别 ' + list.length + ' 条，其中 ' + dupN + ' 条已学过');
+    else toast('已识别 ' + list.length + ' 条，可逐行修改');
   });
   renderPreview();
 
@@ -1610,6 +1734,7 @@ function bindSetup(){
     enterSession(demoSession(state.draft.lang), false);
     renderToday();
   });
+  $('#manualImport').addEventListener('click', openManualImport);
 }
 
 function pickOld(pool, excludeBare){
@@ -1629,6 +1754,22 @@ async function onGenerate(){
         + '<p class="small"><b>1.</b> 打开 aistudio.google.com，登录 Google 账号<br><b>2.</b> 点 Get API key，创建一个密钥并复制<br><b>3.</b> 回到这里，设置 → 粘贴 → 保存</p>'
         + '<p class="tiny">密钥只存在这台设备的浏览器里，不会上传到任何服务器。如果一个都不想填，可以先点「先用演示数据看流程」。</p>',
       actions: [{ label: '去设置', primary: true, onClick: () => showView('settings') }, { label: '先用演示' }]
+    });
+    return;
+  }
+  // 全部是历史已学过的单词（短语不算）时弹窗确认
+  const histSet = allHistoricalBareTerms(state.draft.lang);
+  const nonPhrase = words.filter(w => w.type !== 'phrase');
+  const allDup = nonPhrase.length > 0 && nonPhrase.every(w => histSet.has(bare(w.term)));
+  if (allDup){
+    modal({
+      title: '这些单词都学过了',
+      body: '<p>你这次输入的 ' + nonPhrase.length + ' 个单词都在历史记录里出现过。继续生成会让它们再次进入复习，但重复学习通常不是最优。</p>'
+        + '<p class="small muted">可以改几个新词再来，或者加一个短语（短语不受重复检查）。</p>',
+      actions: [
+        { label: '还是生成吧', primary: true },
+        { label: '回去改词' }
+      ]
     });
     return;
   }
@@ -2649,14 +2790,12 @@ function readInnerHtml(){
   }).join('') || '<p class="tiny">没有匹配的词。</p>';
   return ''
   + '<div class="row" style="justify-content:space-between;margin-bottom:8px">'
-  +   '<div class="row"><button class="playbtn small" id="playRead">▶</button><span class="tiny" id="readStatus">点句子可单独重读</span></div>'
+  +   '<div class="tiny">上面吸顶播放器在听，点句子可单独重读</div>'
   +   '<div class="row"><button class="btn ghost small" id="toggleZh">' + (s.zhOn ? '隐藏译文' : '显示译文') + '</button></div>'
   + '</div>'
-  + '<div style="margin-bottom:10px">' + rateRowHtml('rateRead', 110, 'read') + '</div>'
   + '<div id="article" style="margin:6px 0 14px">' + sents + '</div>'
   + '<div class="row" style="margin-bottom:14px">'
-  +   '<button class="btn small" id="copyTts">复制文本 → 打开 TTS 网站</button>'
-  +   '<button class="btn small" id="copyText">只复制文本</button>'
+  +   '<button class="btn small" id="copyTts">复制文本</button>'
   + '</div>'
   + '<h3 style="margin-top:6px">这一篇的 ' + s.words.length + ' 个词' + (q ? '（显示 ' + rows.length + ' 个）' : '') + '</h3>'
   + '<div class="row" style="align-items:center;gap:8px;margin-bottom:8px">'
@@ -2691,12 +2830,6 @@ function bindRead(){
     const i = Number(el.dataset.i);
     readSentence(i);
   }));
-  const pr = $('#playRead');
-  if (pr) pr.addEventListener('click', () => {
-    if (playingRead()) { stopAll(); return; }
-    playReadAll();
-  });
-  bindRate($('#rateRead'));
   const wsearch = $('#wordSearch');
   if (wsearch) wsearch.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
@@ -2712,16 +2845,10 @@ function bindRead(){
   });
   const zh = $('#toggleZh');
   if (zh) zh.addEventListener('click', () => { s.zhOn = !s.zhOn; renderReadBody(); });
-  const ct = $('#copyText');
-  if (ct) ct.addEventListener('click', async () => {
-    await copyText(fullText(s));
-    toast('已复制短文');
-  });
   const ctts = $('#copyTts');
   if (ctts) ctts.addEventListener('click', async () => {
     await copyText(fullText(s));
-    window.open('https://www.text-to-speech.cn/', '_blank', 'noopener');
-    toast('已复制，粘贴到网站里播放');
+    toast('已复制短文全文');
   });
   $$('.wnoteBtn').forEach(btn => btn.addEventListener('click', () => {
     const ta = $('.wnoteArea[data-wi="' + btn.dataset.wi + '"]');
